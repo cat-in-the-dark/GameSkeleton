@@ -1,10 +1,19 @@
 package org.catinthedark.network;
 
 public interface IMessageBus {
-    <T extends CommonMessage> void send(T message);
-    <T extends CommonMessage> void subscribe(String handlerName, Callback<T> callback);
+    void send(Object message);
+    <T> void subscribe(Class<T> clazz, Callback<T> callback);
     
-    interface Callback<T extends CommonMessage> {
+    interface Callback<T> {
         void apply(T message);
+    }
+
+    interface Transport {
+        void send(Object message);
+        void setReceiver(Receiver receiver);
+
+        interface Receiver {
+            void apply(Object data);
+        }
     }
 }

@@ -4,43 +4,40 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public final class MessageBus implements IMessageBus {
-    private final MessageConverter messageConverter;
-    private final List<Subscriber> subscribers = new ArrayList<>();
-    private Transport transport;
-
-    public MessageBus(Transport transport, MessageConverter messageConverter) {
+public class MessageBus implements IMessageBus {
+    private final List<Subscriber<?>> subscribers = new ArrayList<>();
+    private final Transport transport;
+    
+    public MessageBus(Transport transport) {
         this.transport = transport;
-        this.messageConverter = messageConverter;
-
-        Transport.Receiver receiver = data -> {
-            System.out.println(data);
-            CommonMessage payload = messageConverter.readValue(data, CommonMessage.class);
-            payload.setTypeName(payload.getClass().getCanonicalName());
-            subscribers.stream()
-                    .filter(sub -> Objects.equals(sub.className, payload.getTypeName()))
-                    .forEach(sub -> sub.callback.apply(payload));
-        };
-        transport.setReceiver(receiver);
+        this.transport.setReceiver(data -> subscribers
+                .stream()
+                .filter(sub -> Objects.equals(sub.className, data.getClass().getCanonicalName()))
+                .forEach(sub -> sub.send(data)));
+    }
+    
+    @Override
+    public void send(Object message) {
+        transport.send(message);
+    }
+    
+    @Override
+    public <T> void subscribe(Class<T> clazz, Callback<T> callback) {
+        Subscriber<T> subscriber = new Subscriber<>(clazz.getCanonicalName(), callback);
+        subscribers.add(subscriber);
     }
 
-    public void send(CommonMessage message) {
-        String json = messageConverter.writeValue(message);
-        transport.send(json);
-    }
-
-    public <T extends CommonMessage> void subscribe(String handlerName, Callback<T> callback) {
-        System.out.println("SUBSCRIBED " + handlerName);
-        subscribers.add(new Subscriber<>(handlerName, callback));
-    }
-
-    private static class Subscriber<T extends CommonMessage> {
-        String className;
-        Callback<T> callback;
+    static class Subscriber<T> {
+        final String className;
+        final Callback<T> callback;
 
         Subscriber(String className, Callback<T> callback) {
             this.className = className;
             this.callback = callback;
+        }
+        
+        void send(Object data) {
+            callback.apply((T)data);
         }
     }
 }

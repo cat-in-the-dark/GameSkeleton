@@ -63,4 +63,11 @@ public class MessageBusTest {
         networkTransport.onReceive(jacksonConverter.toJson(a));
         assertEquals(integer.get(), 1);
     }
+    
+    @Test
+    public void testSend() {
+        A a = new A();
+        a.setA("Hello world");
+        messageBus.send(a);
+    }
 }

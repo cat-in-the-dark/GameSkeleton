@@ -12,10 +12,7 @@ public abstract class NetworkTransport implements IMessageBus.Transport {
     
     @Override
     public void send(Object message) {
-        Wrapper wrapper = new Wrapper();
-        wrapper.setData(message);
-        wrapper.setClassName(message.getClass().getCanonicalName());
-        String json = converter.toJson(wrapper);
+        String json = converter.toJson(message);
         sendToNetwork(json);
     }
 
@@ -31,27 +28,6 @@ public abstract class NetworkTransport implements IMessageBus.Transport {
     @Override
     public void setReceiver(Receiver receiver) {
         this.receiver = receiver;
-    }
-    
-    static class Wrapper {
-        private Object data;
-        private String className;
-        
-        public Object getData() {
-            return data;
-        }
-
-        public void setData(Object data) {
-            this.data = data;
-        }
-
-        public String getClassName() {
-            return className;
-        }
-
-        public void setClassName(String className) {
-            this.className = className;
-        }
     }
     
     public interface Converter {

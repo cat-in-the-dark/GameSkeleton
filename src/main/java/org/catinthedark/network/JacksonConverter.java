@@ -17,7 +17,7 @@ public class JacksonConverter implements NetworkTransport.Converter {
     
     @Override
     public String toJson(Object data) {
-        NetworkTransport.Wrapper wrapper = new NetworkTransport.Wrapper();
+        Wrapper wrapper = new Wrapper();
         wrapper.setData(data);
         wrapper.setClassName(data.getClass().getCanonicalName());
         try {
@@ -31,7 +31,7 @@ public class JacksonConverter implements NetworkTransport.Converter {
     @Override
     public Object fromJson(String json) {
         try {
-            JacksonWrapper wrapper =  objectMapper.readValue(json, JacksonWrapper.class);
+            Wrapper wrapper =  objectMapper.readValue(json, Wrapper.class);
             CustomConverter converter = converters.get(wrapper.getClassName());
             if (converter != null) {
                 return converter.apply((Map<String, Object>)wrapper.getData());
@@ -49,7 +49,7 @@ public class JacksonConverter implements NetworkTransport.Converter {
         converters.put(className, converter);
     }
     
-    static class JacksonWrapper {
+    static class Wrapper {
         private Object data;
         private String className;
 

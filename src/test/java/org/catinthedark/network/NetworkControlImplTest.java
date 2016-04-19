@@ -2,10 +2,14 @@ package org.catinthedark.network;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.catinthedark.network.jackson.JacksonMessageConverter;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.assertEquals;
 
 public class NetworkControlImplTest {
     private static class Some extends CommonMessage {
@@ -51,7 +55,6 @@ public class NetworkControlImplTest {
 
         @Override
         public void setReceiver(Receiver receiver) {
-            System.out.println("Register receiver");
             this.receiver = receiver;
         }
         
@@ -80,8 +83,15 @@ public class NetworkControlImplTest {
     
     @Test
     public void testSubscribe() throws IOException {
-        messageBus.subscribe(Some.class, message -> System.out.print(message.getX()));
-        messageBus.subscribe(Another.class, message -> System.out.println(message.getMsg()));
+        AtomicInteger integer = new AtomicInteger(0);
+        messageBus.<Some>subscribe(Some.class.getCanonicalName(), message -> {
+            System.out.print(message.getX());
+            integer.incrementAndGet();
+        });
+        messageBus.<Another>subscribe(Another.class.getCanonicalName(), message -> {
+            System.out.println(message.getMsg());
+            integer.incrementAndGet();
+        });
 
         Some s = new Some();
         s.setX(1);
@@ -93,5 +103,7 @@ public class NetworkControlImplTest {
         
         dummyTransport.onReceive(jsonAnother);
         dummyTransport.onReceive(jsonSome);
+        
+        assertEquals(integer.get(), 2);
     }
 }

@@ -14,9 +14,11 @@ public final class MessageBus implements IMessageBus {
         this.messageConverter = messageConverter;
 
         Transport.Receiver receiver = data -> {
+            System.out.println(data);
             CommonMessage payload = messageConverter.readValue(data, CommonMessage.class);
+            payload.setTypeName(payload.getClass().getCanonicalName());
             subscribers.stream()
-                    .filter(sub -> Objects.equals(sub.className, payload.getClass().getCanonicalName()))
+                    .filter(sub -> Objects.equals(sub.className, payload.getTypeName()))
                     .forEach(sub -> sub.callback.apply(payload));
         };
         transport.setReceiver(receiver);
@@ -27,8 +29,9 @@ public final class MessageBus implements IMessageBus {
         transport.send(json);
     }
 
-    public <T extends CommonMessage> void subscribe(Class<T> clazz, Callback<T> callback) {
-        subscribers.add(new Subscriber<>(clazz.getCanonicalName(), callback));
+    public <T extends CommonMessage> void subscribe(String handlerName, Callback<T> callback) {
+        System.out.println("SUBSCRIBED " + handlerName);
+        subscribers.add(new Subscriber<>(handlerName, callback));
     }
 
     private static class Subscriber<T extends CommonMessage> {

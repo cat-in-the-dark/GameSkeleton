@@ -1,8 +1,8 @@
 package org.catinthedark.network;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,32 +16,30 @@ public class JacksonConverter implements NetworkTransport.Converter {
     }
     
     @Override
-    public String toJson(Object data) {
+    public String toJson(Object data) throws NetworkTransport.ConverterException {
         Wrapper wrapper = new Wrapper();
         wrapper.setData(data);
         wrapper.setClassName(data.getClass().getCanonicalName());
         try {
             return objectMapper.writeValueAsString(wrapper);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace(System.err);
-            return null;
+        } catch (Exception e) {
+            throw new NetworkTransport.ConverterException("Can't convert to json " + data + " : " + e.getMessage(), e);
         }
     }
     
     @Override
-    public Object fromJson(String json) {
+    public Object fromJson(String json) throws NetworkTransport.ConverterException {
+        Wrapper wrapper;
         try {
-            Wrapper wrapper =  objectMapper.readValue(json, Wrapper.class);
-            CustomConverter converter = converters.get(wrapper.getClassName());
-            if (converter != null) {
-                return converter.apply((Map<String, Object>)wrapper.getData());
-            } else {
-                System.err.println("There is no " + wrapper.getClassName() + " converter");
-                return null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-            return null;
+            wrapper = objectMapper.readValue(json, Wrapper.class);
+        } catch (IOException e) {
+            throw new NetworkTransport.ConverterException("Can't parse " + json + " : " + e.getMessage(), e);
+        }
+        CustomConverter converter = converters.get(wrapper.getClassName());
+        if (converter != null) {
+            return converter.apply((Map<String, Object>)wrapper.getData());
+        } else {
+            throw new NetworkTransport.ConverterException("There is no " + wrapper.getClassName() + " converter");
         }
     }
     

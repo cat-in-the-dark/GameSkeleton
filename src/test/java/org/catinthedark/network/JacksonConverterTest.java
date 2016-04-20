@@ -40,7 +40,7 @@ public class JacksonConverterTest {
     }
 
     @Test
-    public void testConvertToJson() {
+    public void testConvertToJson() throws NetworkTransport.ConverterException {
         A a = new A();
         a.setA("Hello world");
         String json = jacksonConverter.toJson(a);
@@ -49,7 +49,7 @@ public class JacksonConverterTest {
     }
 
     @Test
-    public void testConvertFromJson() {
+    public void testConvertFromJson() throws NetworkTransport.ConverterException {
         A a = new A();
         a.setA("Hello world");
         String json = jacksonConverter.toJson(a);

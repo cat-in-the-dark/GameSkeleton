@@ -12,8 +12,12 @@ public abstract class NetworkTransport implements IMessageBus.Transport {
     
     @Override
     public void send(Object message) {
-        String json = converter.toJson(message);
-        sendToNetwork(json);
+        try {
+            String json = converter.toJson(message);
+            sendToNetwork(json);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
     }
 
     /**
@@ -21,8 +25,12 @@ public abstract class NetworkTransport implements IMessageBus.Transport {
      * @param json
      */
     void onReceive(String json) {
-        Object data = converter.fromJson(json);
-        receiver.apply(data);
+        try {
+            Object data = converter.fromJson(json);
+            receiver.apply(data);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
     }
 
     @Override
@@ -31,7 +39,18 @@ public abstract class NetworkTransport implements IMessageBus.Transport {
     }
     
     public interface Converter {
-        String toJson(Object data);
-        Object fromJson(String json);
+        String toJson(Object data) throws ConverterException;
+        Object fromJson(String json) throws ConverterException;
+    }
+
+    public static class ConverterException extends Exception {
+
+        public ConverterException(String s, Exception e) {
+            super(s, e);
+        }
+
+        public ConverterException(String s) {
+            super(s);
+        }
     }
 }

@@ -48,7 +48,7 @@ public class MessageBusTest {
     }
     
     @Test
-    public void testOnReceive() {
+    public void testOnReceive() throws NetworkTransport.ConverterException {
         A a = new A();
         a.setA("Hello world");
         AtomicInteger integer = new AtomicInteger(0);

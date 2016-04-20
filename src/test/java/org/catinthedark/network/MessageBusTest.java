@@ -53,7 +53,7 @@ public class MessageBusTest {
         a.setA("Hello world");
         AtomicInteger integer = new AtomicInteger(0);
         
-        messageBus.subscribe(A.class, message -> {
+        messageBus.subscribe(A.class, (message, sender) -> {
             System.out.println(message);
             if (Objects.equals(message.getA(), a.getA())) {
                 integer.incrementAndGet();

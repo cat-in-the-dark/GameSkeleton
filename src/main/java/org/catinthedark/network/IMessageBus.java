@@ -5,7 +5,12 @@ public interface IMessageBus {
     <T> void subscribe(Class<T> clazz, Callback<T> callback);
     
     interface Callback<T> {
-        void apply(T message);
+        void apply(T message, String sender);
+    }
+    
+    interface Wrapper {
+        Object getData();
+        String getSender();
     }
 
     interface Transport {
@@ -13,7 +18,7 @@ public interface IMessageBus {
         void setReceiver(Receiver receiver);
 
         interface Receiver {
-            void apply(Object data);
+            void apply(Wrapper data);
         }
     }
 }

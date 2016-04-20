@@ -26,7 +26,7 @@ public abstract class NetworkTransport implements IMessageBus.Transport {
      */
     void onReceive(String json) {
         try {
-            Object data = converter.fromJson(json);
+            IMessageBus.Wrapper data = converter.fromJson(json);
             receiver.apply(data);
         } catch (Exception e) {
             e.printStackTrace(System.err);
@@ -40,7 +40,7 @@ public abstract class NetworkTransport implements IMessageBus.Transport {
     
     public interface Converter {
         String toJson(Object data) throws ConverterException;
-        Object fromJson(String json) throws ConverterException;
+        IMessageBus.Wrapper fromJson(String json) throws ConverterException;
     }
 
     public static class ConverterException extends Exception {

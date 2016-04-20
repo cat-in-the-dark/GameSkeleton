@@ -2,6 +2,7 @@ package org.catinthedark.network.example;
 
 public class GameStartedMessage {
     private String role;
+    private String clientID;
 
     public String getRole() {
         return role;
@@ -9,5 +10,13 @@ public class GameStartedMessage {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getClientID() {
+        return clientID;
+    }
+
+    public void setClientID(String clientID) {
+        this.clientID = clientID;
     }
 }

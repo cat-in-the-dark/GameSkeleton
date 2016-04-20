@@ -10,10 +10,10 @@ public class MessageBus implements IMessageBus {
     
     public MessageBus(Transport transport) {
         this.transport = transport;
-        this.transport.setReceiver(data -> subscribers
+        this.transport.setReceiver(wrapper -> subscribers
                 .stream()
-                .filter(sub -> Objects.equals(sub.className, data.getClass().getCanonicalName()))
-                .forEach(sub -> sub.send(data)));
+                .filter(sub -> Objects.equals(sub.className, wrapper.getData().getClass().getCanonicalName()))
+                .forEach(sub -> sub.send(wrapper.getData(), wrapper.getSender())));
     }
     
     @Override
@@ -36,8 +36,8 @@ public class MessageBus implements IMessageBus {
             this.callback = callback;
         }
         
-        void send(Object data) {
-            callback.apply((T)data);
+        void send(Object data, String sender) {
+            callback.apply((T)data, sender);
         }
     }
 }

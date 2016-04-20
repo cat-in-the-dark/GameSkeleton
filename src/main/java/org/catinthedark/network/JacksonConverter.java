@@ -28,7 +28,8 @@ public class JacksonConverter implements NetworkTransport.Converter {
     }
     
     @Override
-    public Object fromJson(String json) throws NetworkTransport.ConverterException {
+    public Wrapper fromJson(String json) throws NetworkTransport.ConverterException {
+        System.out.println(json);
         Wrapper wrapper;
         try {
             wrapper = objectMapper.readValue(json, Wrapper.class);
@@ -37,7 +38,9 @@ public class JacksonConverter implements NetworkTransport.Converter {
         }
         CustomConverter converter = converters.get(wrapper.getClassName());
         if (converter != null) {
-            return converter.apply((Map<String, Object>)wrapper.getData());
+            Object data = converter.apply((Map<String, Object>)wrapper.getData());
+            wrapper.setData(data);
+            return wrapper;
         } else {
             throw new NetworkTransport.ConverterException("There is no " + wrapper.getClassName() + " converter");
         }
@@ -47,7 +50,8 @@ public class JacksonConverter implements NetworkTransport.Converter {
         converters.put(className, converter);
     }
     
-    static class Wrapper {
+    public static class Wrapper implements IMessageBus.Wrapper {
+        private String sender;
         private Object data;
         private String className;
 
@@ -65,6 +69,14 @@ public class JacksonConverter implements NetworkTransport.Converter {
 
         public void setClassName(String className) {
             this.className = className;
+        }
+
+        public String getSender() {
+            return sender;
+        }
+
+        public void setSender(String sender) {
+            this.sender = sender;
         }
     }
     

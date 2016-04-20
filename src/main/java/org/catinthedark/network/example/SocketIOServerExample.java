@@ -4,6 +4,7 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.catinthedark.network.JacksonConverter;
 import org.catinthedark.network.NetworkTransport;
@@ -13,14 +14,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SocketIOServerExample {
     public static Long MAX_PLAYERS = 2L;
 
     public static void main(String[] args) throws IOException {
         final List<Room> rooms = new ArrayList<>();
+        final List<Player> playerList = new ArrayList<>();
 
-        final JacksonConverter converter = new JacksonConverter(new ObjectMapper());
+        final ObjectMapper mapper = new ObjectMapper();
+        final JacksonConverter converter = new JacksonConverter(mapper);
 
         final Configuration config = new Configuration();
         config.setHostname("localhost");
@@ -42,14 +47,17 @@ public class SocketIOServerExample {
                         return newRoom;
                     });
 
-            room.connect(new Player(room, socketIOClient));
+            Player player = new Player(room, socketIOClient);
+            playerList.add(player);
+            room.connect(player);
 
-            room.doIfReady((players) -> players.forEach(player -> {
+            room.doIfReady((players) -> players.forEach(p -> {
                 GameStartedMessage gameStartedMessage = new GameStartedMessage();
                 gameStartedMessage.setRole(String.valueOf(Math.random()));
+                gameStartedMessage.setClientID(p.getSocket().getSessionId().toString());
                 try {
                     String msg = converter.toJson(gameStartedMessage);
-                    player.socket.sendEvent("message", msg);
+                    p.socket.sendEvent("message", msg);
                 } catch (NetworkTransport.ConverterException e) {
                     e.printStackTrace(System.err);
                 }
@@ -57,13 +65,23 @@ public class SocketIOServerExample {
         });
 
         server.addEventListener("message", String.class, (client, data, ackSender) -> {
-            System.out.println("Message " + client + " " + data);
-            client.getAllRooms().stream().forEach(room -> server.getRoomOperations(room).getClients().forEach(roomClient -> {
-                if (roomClient.getSessionId() != client.getSessionId()) roomClient.sendEvent("message", data);
-            }));
+            System.out.println("Message " + client.getSessionId() + " " + data);
+            JacksonConverter.Wrapper wrapper = mapper.readValue(data, JacksonConverter.Wrapper.class);
+            wrapper.setSender(client.getSessionId().toString());
+            String msg = mapper.writeValueAsString(wrapper);
+            
+            playerList
+                    .stream()
+                    .filter(p -> p.isEqual(client))
+                    .flatMap(Player::getPlayerMatesStream)
+                    .forEach(p -> p.getSocket().sendEvent("message", msg));
         });
 
-        server.addDisconnectListener(client -> rooms.forEach(room -> room.disconnect(client)));
+        server.addDisconnectListener(client -> {
+            System.out.println("Disconnected " + client.getSessionId());
+            rooms.forEach(room -> room.disconnect(client));
+            playerList.removeIf(p -> p.isEqual(client));
+        });
 
         server.start();
         Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
@@ -87,7 +105,6 @@ public class SocketIOServerExample {
         public void connect(Player player) {
             if (hasFreePlace()) {
                 players.add(player);
-                player.getSocket().joinRoom(name);
             }
         }
 
@@ -125,6 +142,17 @@ public class SocketIOServerExample {
 
         public Room getRoom() {
             return room;
+        }
+        
+        public Stream<Player> getPlayerMatesStream() {
+            return room
+                    .getPlayers()
+                    .parallelStream()
+                    .filter(p -> p.getSocket().getSessionId().compareTo(socket.getSessionId()) != 0);
+        }
+        
+        public Boolean isEqual(SocketIOClient client) {
+            return client.getSessionId().compareTo(socket.getSessionId()) == 0;
         }
 
         public SocketIOClient getSocket() {

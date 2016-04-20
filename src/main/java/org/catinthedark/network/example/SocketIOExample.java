@@ -28,7 +28,7 @@ public class SocketIOExample {
         SocketIOTransport transport =  new SocketIOTransport(jacksonConverter, uri);
         final MessageBus messageBus = new MessageBus(transport);
 
-        messageBus.subscribe(GameStartedMessage.class, message -> {
+        messageBus.subscribe(GameStartedMessage.class, (message, sender) -> {
             System.out.println(message.getRole());
             Move move = new Move();
             move.setX(Math.random());
@@ -36,8 +36,8 @@ public class SocketIOExample {
             messageBus.send(move);
         });
 
-        messageBus.subscribe(Move.class, message -> {
-            System.out.println("Move x=" + message.getX() + " y=" + message.getY());
+        messageBus.subscribe(Move.class, (message, sender) -> {
+            System.out.println("Move " + sender + " x=" + message.getX() + " y=" + message.getY());
         });
 
         transport.connect();

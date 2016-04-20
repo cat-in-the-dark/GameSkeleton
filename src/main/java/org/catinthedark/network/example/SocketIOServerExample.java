@@ -53,7 +53,7 @@ public class SocketIOServerExample {
 
             room.doIfReady((players) -> players.forEach(p -> {
                 GameStartedMessage gameStartedMessage = new GameStartedMessage();
-                gameStartedMessage.setRole(String.valueOf(Math.random()));
+                gameStartedMessage.setRole(p.getStatus());
                 gameStartedMessage.setClientID(p.getSocket().getSessionId().toString());
                 try {
                     String msg = converter.toJson(gameStartedMessage);
@@ -79,8 +79,19 @@ public class SocketIOServerExample {
 
         server.addDisconnectListener(client -> {
             System.out.println("Disconnected " + client.getSessionId());
-            rooms.forEach(room -> room.disconnect(client));
             playerList.removeIf(p -> p.isEqual(client));
+            rooms.stream()
+                    .filter(room -> room.disconnect(client))
+                    .forEach(r -> {
+                        DisconnectedMessage msg = new DisconnectedMessage();
+                        msg.setClientID(client.getSessionId());
+                        try {
+                            String json = converter.toJson(msg);
+                            r.getPlayers().forEach(p -> p.getSocket().sendEvent("message", json));
+                        } catch (NetworkTransport.ConverterException e) {
+                            e.printStackTrace(System.err);
+                        }
+                    });
         });
 
         server.start();
@@ -104,12 +115,13 @@ public class SocketIOServerExample {
 
         public void connect(Player player) {
             if (hasFreePlace()) {
+                if (players.size() == 0) player.setStatus("admin");
                 players.add(player);
             }
         }
 
-        public void disconnect(SocketIOClient client) {
-            players.removeIf(player -> player.getSocket().getSessionId() == client.getSessionId());
+        public boolean disconnect(SocketIOClient client) {
+            return players.removeIf(player -> player.getSocket().getSessionId() == client.getSessionId());
         }
 
         public void doIfReady(Consumer<List<Player>> action) {
@@ -132,12 +144,14 @@ public class SocketIOServerExample {
     }
 
     static class Player {
+        private String status;
         private final Room room;
         private final SocketIOClient socket;
 
         public Player(Room room, SocketIOClient client) {
             this.room = room;
             this.socket = client;
+            this.status = "player";
         }
 
         public Room getRoom() {
@@ -157,6 +171,14 @@ public class SocketIOServerExample {
 
         public SocketIOClient getSocket() {
             return socket;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
     }
 }

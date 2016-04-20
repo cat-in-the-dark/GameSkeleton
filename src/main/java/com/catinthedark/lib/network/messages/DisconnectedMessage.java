@@ -1,4 +1,4 @@
-package org.catinthedark.network.example;
+package com.catinthedark.lib.network.messages;
 
 import java.util.UUID;
 

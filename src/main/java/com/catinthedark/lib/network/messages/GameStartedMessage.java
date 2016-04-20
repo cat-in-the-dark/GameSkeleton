@@ -1,4 +1,4 @@
-package org.catinthedark.network.example;
+package com.catinthedark.lib.network.messages;
 
 public class GameStartedMessage {
     private String role;

@@ -1,9 +1,10 @@
-package org.catinthedark.network.example;
+package com.catinthedark.lib.network.example;
 
+import com.catinthedark.lib.network.JacksonConverter;
+import com.catinthedark.lib.network.MessageBus;
+import com.catinthedark.lib.network.SocketIOTransport;
+import com.catinthedark.lib.network.messages.GameStartedMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.catinthedark.network.JacksonConverter;
-import org.catinthedark.network.MessageBus;
-import org.catinthedark.network.SocketIOTransport;
 
 import java.io.IOException;
 import java.net.URI;

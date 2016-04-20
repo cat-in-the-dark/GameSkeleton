@@ -1,4 +1,4 @@
-package org.catinthedark.network;
+package com.catinthedark.lib.network;
 
 public interface IMessageBus {
     void send(Object message);

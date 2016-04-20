@@ -1,20 +1,20 @@
-package org.catinthedark.network.example;
+package com.catinthedark.lib.network.example;
 
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.catinthedark.network.JacksonConverter;
-import org.catinthedark.network.NetworkTransport;
+import com.catinthedark.lib.network.JacksonConverter;
+import com.catinthedark.lib.network.NetworkTransport;
+import com.catinthedark.lib.network.messages.DisconnectedMessage;
+import com.catinthedark.lib.network.messages.GameStartedMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SocketIOServerExample {

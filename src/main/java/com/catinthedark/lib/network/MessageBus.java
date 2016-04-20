@@ -1,4 +1,4 @@
-package org.catinthedark.network;
+package com.catinthedark.lib.network;
 
 import java.util.ArrayList;
 import java.util.List;

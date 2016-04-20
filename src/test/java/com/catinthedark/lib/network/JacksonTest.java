@@ -1,4 +1,4 @@
-package org.catinthedark.network;
+package com.catinthedark.lib.network;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.type.TypeReference;

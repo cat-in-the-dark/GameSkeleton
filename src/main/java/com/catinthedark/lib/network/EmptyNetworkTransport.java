@@ -1,4 +1,4 @@
-package org.catinthedark.network;
+package com.catinthedark.lib.network;
 
 public final class EmptyNetworkTransport extends NetworkTransport {
     public EmptyNetworkTransport(Converter converter) {

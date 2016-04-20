@@ -1,4 +1,4 @@
-package org.catinthedark.network;
+package com.catinthedark.lib.network;
 
 public abstract class NetworkTransport implements IMessageBus.Transport {
     private final Converter converter;

@@ -1,4 +1,4 @@
-package org.catinthedark.network;
+package com.catinthedark.lib.network;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;

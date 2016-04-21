@@ -21,8 +21,7 @@ import java.util.stream.Stream;
 public class SocketIOServerExample {
     private static final Logger log = LoggerFactory.getLogger(SocketIOServerExample.class);
     public static Long MAX_PLAYERS = 2L;
-    
-    static private String defaultHost = "0.0.0.";
+
     static private String defaultPort = "9000";
     static private String MESSAGE = "message"; 
 
@@ -39,7 +38,6 @@ public class SocketIOServerExample {
         final JacksonConverter converter = new JacksonConverter(mapper);
 
         final Configuration config = new Configuration();
-        config.setHostname(defaultHost);
         config.setPort(port);
         final SocketConfig socketConfig = new SocketConfig();
         socketConfig.setReuseAddress(true);

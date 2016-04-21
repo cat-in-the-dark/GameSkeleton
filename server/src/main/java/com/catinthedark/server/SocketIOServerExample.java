@@ -28,7 +28,7 @@ public class SocketIOServerExample {
 
     public static void main(String[] args) {
         String portStr = null;
-        if (args.length > 1) portStr = args[0];
+        if (args.length > 0) portStr = args[0];
         if (portStr == null || portStr.isEmpty()) portStr = defaultPort;
         final Integer port = Integer.valueOf(portStr);
         

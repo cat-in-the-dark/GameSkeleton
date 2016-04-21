@@ -1,16 +1,17 @@
-package com.catinthedark.lib.network.example;
+package com.catinthedark.server;
 
+import com.catinthedark.lib.network.JacksonConverter;
+import com.catinthedark.lib.network.NetworkTransport;
+import com.catinthedark.lib.network.messages.DisconnectedMessage;
+import com.catinthedark.lib.network.messages.GameStartedMessage;
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.catinthedark.lib.network.JacksonConverter;
-import com.catinthedark.lib.network.NetworkTransport;
-import com.catinthedark.lib.network.messages.DisconnectedMessage;
-import com.catinthedark.lib.network.messages.GameStartedMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -18,9 +19,19 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class SocketIOServerExample {
+    private static final Logger log = LoggerFactory.getLogger(SocketIOServerExample.class);
     public static Long MAX_PLAYERS = 2L;
+    
+    static private String defaultHost = "0.0.0.";
+    static private String defaultPort = "9000";
+    static private String MESSAGE = "message"; 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        String portStr = null;
+        if (args.length > 1) portStr = args[0];
+        if (portStr == null || portStr.isEmpty()) portStr = defaultPort;
+        final Integer port = Integer.valueOf(portStr);
+        
         final List<Room> rooms = new ArrayList<>();
         final List<Player> playerList = new ArrayList<>();
 
@@ -28,21 +39,21 @@ public class SocketIOServerExample {
         final JacksonConverter converter = new JacksonConverter(mapper);
 
         final Configuration config = new Configuration();
-        config.setHostname("localhost");
-        config.setPort(9000);
+        config.setHostname(defaultHost);
+        config.setPort(port);
         final SocketConfig socketConfig = new SocketConfig();
         socketConfig.setReuseAddress(true);
         config.setSocketConfig(socketConfig);
 
         final SocketIOServer server = new SocketIOServer(config);
         server.addConnectListener(socketIOClient -> {
-            System.out.println("New connection " + server.getAllClients().size());
+            log.info("New connection "+socketIOClient.getSessionId().toString()+ " " + server.getAllClients().size());
 
             Room room = rooms
                     .stream()
                     .filter(Room::hasFreePlace)
                     .findAny().orElseGet(() -> {
-                        Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID().toString());
+                        Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID());
                         rooms.add(newRoom);
                         return newRoom;
                     });
@@ -52,20 +63,21 @@ public class SocketIOServerExample {
             room.connect(player);
 
             room.doIfReady((players) -> players.forEach(p -> {
+                log.info("Game started in room " + room.getName());
                 GameStartedMessage gameStartedMessage = new GameStartedMessage();
                 gameStartedMessage.setRole(p.getStatus());
                 gameStartedMessage.setClientID(p.getSocket().getSessionId().toString());
                 try {
                     String msg = converter.toJson(gameStartedMessage);
-                    p.socket.sendEvent("message", msg);
+                    p.socket.sendEvent(MESSAGE, msg);
                 } catch (NetworkTransport.ConverterException e) {
                     e.printStackTrace(System.err);
                 }
             }));
+            log.info("User serviced " + socketIOClient.getSessionId().toString());
         });
 
-        server.addEventListener("message", String.class, (client, data, ackSender) -> {
-            System.out.println("Message " + client.getSessionId() + " " + data);
+        server.addEventListener(MESSAGE, String.class, (client, data, ackSender) -> {
             JacksonConverter.Wrapper wrapper = mapper.readValue(data, JacksonConverter.Wrapper.class);
             wrapper.setSender(client.getSessionId().toString());
             String msg = mapper.writeValueAsString(wrapper);
@@ -74,20 +86,20 @@ public class SocketIOServerExample {
                     .stream()
                     .filter(p -> p.isEqual(client))
                     .flatMap(Player::getPlayerMatesStream)
-                    .forEach(p -> p.getSocket().sendEvent("message", msg));
+                    .forEach(p -> p.getSocket().sendEvent(MESSAGE, msg));
         });
 
         server.addDisconnectListener(client -> {
-            System.out.println("Disconnected " + client.getSessionId());
+            log.info("Disconnected " + client.getSessionId());
             playerList.removeIf(p -> p.isEqual(client));
             rooms.stream()
                     .filter(room -> room.disconnect(client))
                     .forEach(r -> {
                         DisconnectedMessage msg = new DisconnectedMessage();
-                        msg.setClientID(client.getSessionId());
+                        msg.setClientID(client.getSessionId().toString());
                         try {
                             String json = converter.toJson(msg);
-                            r.getPlayers().forEach(p -> p.getSocket().sendEvent("message", json));
+                            r.getPlayers().forEach(p -> p.getSocket().sendEvent(MESSAGE, json));
                         } catch (NetworkTransport.ConverterException e) {
                             e.printStackTrace(System.err);
                         }
@@ -101,9 +113,9 @@ public class SocketIOServerExample {
     static class Room {
         private final List<Player> players;
         private final Long maxPlayers;
-        private final String name;
+        private final UUID name;
 
-        public Room(Long maxPlayers, String name) {
+        public Room(Long maxPlayers, UUID name) {
             this.maxPlayers = maxPlayers;
             this.players = new ArrayList<>();
             this.name = name;
@@ -138,7 +150,7 @@ public class SocketIOServerExample {
             return maxPlayers;
         }
 
-        public String getName() {
+        public UUID getName() {
             return name;
         }
     }

@@ -1,0 +1,39 @@
+group 'com.catinthedark.server'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'idea'
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+mainClassName = 'com.catinthedark.server.SocketIOServerExample'
+
+buildscript {
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+    }
+}
+
+dependencies {
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.7.0'
+    compile 'com.corundumstudio.socketio:netty-socketio:1.7.10'
+    compile 'org.slf4j:slf4j-simple:1.7.7'
+    compile project(":lib")
+    testCompile 'junit:junit:4.12'
+}
+
+//Special for heroku
+task stage(type: Copy, dependsOn: [clean, shadowJar]) {
+    from "${shadowJar.archivePath}"
+    into project.rootDir
+    rename {
+        'app.jar'
+    }
+}
+
+stage.mustRunAfter(clean)
+clean << {
+    project.file('app.jar').delete()
+}

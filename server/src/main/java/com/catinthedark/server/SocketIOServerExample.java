@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SocketIOServerExample {
@@ -23,14 +24,14 @@ public class SocketIOServerExample {
     public static Long MAX_PLAYERS = 2L;
 
     static private String defaultPort = "9000";
-    static private String MESSAGE = "message"; 
+    static private String MESSAGE = "message";
 
     public static void main(String[] args) {
         String portStr = null;
         if (args.length > 0) portStr = args[0];
         if (portStr == null || portStr.isEmpty()) portStr = defaultPort;
         final Integer port = Integer.valueOf(portStr);
-        
+
         final List<Room> rooms = new ArrayList<>();
         final List<Player> playerList = new ArrayList<>();
 
@@ -60,18 +61,20 @@ public class SocketIOServerExample {
             playerList.add(player);
             room.connect(player);
 
-            room.doIfReady((players) -> players.forEach(p -> {
-                log.info("Game started in room " + room.getName());
-                GameStartedMessage gameStartedMessage = new GameStartedMessage();
-                gameStartedMessage.setRole(p.getStatus());
-                gameStartedMessage.setClientID(p.getSocket().getSessionId().toString());
-                try {
-                    String msg = converter.toJson(gameStartedMessage);
-                    p.socket.sendEvent(MESSAGE, msg);
-                } catch (NetworkTransport.ConverterException e) {
-                    e.printStackTrace(System.err);
-                }
-            }));
+            room.doIfReady((players) -> {
+                log.info("Game started in room " + room.getName() + " " + players.stream().map(Player::getIP).collect(Collectors.joining(",")));
+                players.forEach(p -> {
+                    GameStartedMessage gameStartedMessage = new GameStartedMessage();
+                    gameStartedMessage.setRole(p.getStatus());
+                    gameStartedMessage.setClientID(p.getSocket().getSessionId().toString());
+                    try {
+                        String msg = converter.toJson(gameStartedMessage);
+                        p.socket.sendEvent(MESSAGE, msg);
+                    } catch (NetworkTransport.ConverterException e) {
+                        e.printStackTrace(System.err);
+                    }
+                });
+            });
             log.info("User serviced " + socketIOClient.getSessionId().toString());
         });
 
@@ -79,7 +82,7 @@ public class SocketIOServerExample {
             JacksonConverter.Wrapper wrapper = mapper.readValue(data, JacksonConverter.Wrapper.class);
             wrapper.setSender(client.getSessionId().toString());
             String msg = mapper.writeValueAsString(wrapper);
-            
+
             playerList
                     .stream()
                     .filter(p -> p.isEqual(client))
@@ -167,14 +170,14 @@ public class SocketIOServerExample {
         public Room getRoom() {
             return room;
         }
-        
+
         public Stream<Player> getPlayerMatesStream() {
             return room
                     .getPlayers()
                     .parallelStream()
                     .filter(p -> p.getSocket().getSessionId().compareTo(socket.getSessionId()) != 0);
         }
-        
+
         public Boolean isEqual(SocketIOClient client) {
             return client.getSessionId().compareTo(socket.getSessionId()) == 0;
         }
@@ -189,6 +192,10 @@ public class SocketIOServerExample {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+
+        public String getIP() {
+            return socket.getRemoteAddress().toString();
         }
     }
 }

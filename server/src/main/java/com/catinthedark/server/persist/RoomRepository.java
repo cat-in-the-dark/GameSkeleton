@@ -113,7 +113,7 @@ public class RoomRepository {
         try(final Connection conn = sql.beginTransaction()) {
             final GameModel model = findQuery(conn, gameName.toString());
             playerModel.setConnectedAt(new Date());
-            playerModel.setGeo(geoIPService.findByIp(playerModel.getIp()));
+            //playerModel.setGeo(geoIPService.findByIp(playerModel.getIp()));
             model.getPlayers().add(playerModel);
             updateQuery(conn, model);
             conn.commit();

@@ -63,7 +63,6 @@ public class SocketIOService {
             final Room room = findFreeOrCreateAndConnect(socketIOClient);
 
             room.doIfReady((players) -> {
-                repository.startGame(room.getName().toString());
                 log.info("Game started in room " + room.getName() + " " + players.stream().map(Player::getIP).collect(Collectors.joining(",")));
                 players.parallelStream().forEach(p -> {
                     GameStartedMessage gameStartedMessage = new GameStartedMessage();
@@ -76,6 +75,7 @@ public class SocketIOService {
                         e.printStackTrace(System.err);
                     }
                 });
+                repository.startGame(room.getName().toString());
             }, this::sendNotification);
             log.info("User serviced " + socketIOClient.getSessionId().toString());
         });
@@ -160,13 +160,15 @@ public class SocketIOService {
     }
     
     private void sendNotification(final Room room) {
-        try {
-            URL url = new URL(Configs.getNotificationUrl("Somebody wont to play 'Za bochok'. Players count on the server is " + players.size() + ". Rooms count is " + rooms.size()));
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            log.info("Notification status for room " + room + " : "+ connection.getResponseCode());
-            connection.disconnect();
-        } catch (Exception e) {
-            log.error("Can't send notification " + e.getMessage(), e);
-        }
+        new Thread(() -> {
+            try {
+                URL url = new URL(Configs.getNotificationUrl("Somebody wont to play 'Za bochok'. Players count on the server is " + players.size() + ". Rooms count is " + rooms.size()));
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                log.info("Notification status for room " + room + " : "+ connection.getResponseCode());
+                connection.disconnect();
+            } catch (Exception e) {
+                log.error("Can't send notification " + e.getMessage(), e);
+            } 
+        }).start();
     }
 }

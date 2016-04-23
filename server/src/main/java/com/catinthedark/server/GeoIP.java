@@ -33,17 +33,4 @@ public class GeoIP {
         
         return null;
     }
-    
-    public static class GeoModel {
-        private String status;
-        private String country;
-        private String countryCode;
-        private String region;
-        private String regionName;
-        private String city;
-        private String lat;
-        private String lon;
-        private String timezone;
-        private String query;
-    }
 }

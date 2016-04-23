@@ -46,9 +46,11 @@ public final class Room {
         return players.remove(client.getSessionId()) != null;
     }
 
-    public synchronized void doIfReady(Consumer<Collection<Player>> action) {
+    public synchronized void doIfReady(Consumer<Collection<Player>> action, Consumer<Room> elseAction) {
         if (maxPlayers == players.size()) {
             action.accept(players.values());
+        } else {
+            elseAction.accept(this);
         }
     }
 

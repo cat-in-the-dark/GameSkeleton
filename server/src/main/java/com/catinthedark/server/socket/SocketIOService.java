@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +78,7 @@ public class SocketIOService {
                         e.printStackTrace(System.err);
                     }
                 });
-            });
+            }, (r) -> sendNotification(r));
             log.info("User serviced " + socketIOClient.getSessionId().toString());
         });
 
@@ -153,5 +155,16 @@ public class SocketIOService {
         pm.setIp(player.getIP());
         pm.setUuid(player.getSocket().getSessionId().toString());
         return pm;
+    }
+    
+    private void sendNotification(final Room room) {
+        try {
+            URL url = new URL(Configs.getNotificationUrl("Somebody wont to play 'Za bochok'. Players count on the server is " + players.size() + ". Rooms count is " + rooms.size()));
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            log.info("Notification status for room " + room + " : "+ connection.getResponseCode());
+            connection.disconnect();
+        } catch (Exception e) {
+            log.error("Can't send notification " + e.getMessage(), e);
+        }
     }
 }

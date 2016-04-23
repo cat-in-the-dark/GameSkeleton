@@ -2,19 +2,18 @@ package com.catinthedark.server.socket;
 
 import com.corundumstudio.socketio.SocketIOClient;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public final class Room {
-    private final List<Player> players;
+    private final Map<UUID, Player> players;
     private final Long maxPlayers;
     private final UUID name;
 
     public Room(Long maxPlayers, UUID name) {
         this.maxPlayers = maxPlayers;
-        this.players = new ArrayList<>();
+        this.players = new ConcurrentHashMap<>();
         this.name = name;
     }
 
@@ -22,25 +21,30 @@ public final class Room {
         return players.size() < maxPlayers;
     }
 
-    public void connect(Player player) {
+    public synchronized void connect(Player player) {
         if (hasFreePlace()) {
             if (players.size() == 0) player.setStatus("admin");
-            players.add(player);
+            players.put(player.getSocket().getSessionId(), player);
         }
     }
 
+    /**
+     * 
+     * @param client socket object
+     * @return true if player disconnected, false if this room hasn't got this player
+     */
     public boolean disconnect(SocketIOClient client) {
-        return players.removeIf(player -> player.getSocket().getSessionId() == client.getSessionId());
+        return players.remove(client.getSessionId()) != null;
     }
 
-    public void doIfReady(Consumer<List<Player>> action) {
+    public synchronized void doIfReady(Consumer<Collection<Player>> action) {
         if (maxPlayers == players.size()) {
-            action.accept(players);
+            action.accept(players.values());
         }
     }
 
-    public List<Player> getPlayers() {
-        return players;
+    public Collection<Player> getPlayers() {
+        return players.values();
     }
 
     public Long getMaxPlayers() {

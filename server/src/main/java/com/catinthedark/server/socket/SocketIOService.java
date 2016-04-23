@@ -10,6 +10,7 @@ import com.catinthedark.server.persist.PlayerModel;
 import com.catinthedark.server.persist.RoomRepository;
 import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketConfig;
+import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -17,7 +18,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class SocketIOService {
@@ -26,7 +29,7 @@ public class SocketIOService {
     private static String MESSAGE = "message";
 
     private final List<Room> rooms = new ArrayList<>();
-    private final List<Player> playerList = new ArrayList<>();
+    private final Map<UUID, Player> players = new ConcurrentHashMap<>();
     
     private final SocketIOServer server;
 
@@ -57,20 +60,7 @@ public class SocketIOService {
         server.addConnectListener(socketIOClient -> {
             log.info("New connection "+socketIOClient.getSessionId().toString()+ " " + server.getAllClients().size());
 
-            Room room = rooms
-                    .parallelStream()
-                    .filter(Room::hasFreePlace)
-                    .findAny().orElseGet(() -> {
-                        Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID());
-                        rooms.add(newRoom);
-                        repository.create(toModel(newRoom));
-                        return newRoom;
-                    });
-
-            Player player = new Player(room, socketIOClient);
-            playerList.add(player);
-            room.connect(player);
-            repository.update(toModel(room));
+            final Room room = findFreeOrCreateAndConnect(socketIOClient);
 
             room.doIfReady((players) -> {
                 repository.startGame(room.getName().toString());
@@ -91,38 +81,54 @@ public class SocketIOService {
         });
 
         server.addEventListener(MESSAGE, String.class, (client, data, ackSender) -> {
-            JacksonConverter.Wrapper wrapper = mapper.readValue(data, JacksonConverter.Wrapper.class);
+            final JacksonConverter.Wrapper wrapper = mapper.readValue(data, JacksonConverter.Wrapper.class);
             wrapper.setSender(client.getSessionId().toString());
-            String msg = mapper.writeValueAsString(wrapper);
+            final String msg = mapper.writeValueAsString(wrapper);
 
-            playerList
-                    .parallelStream()
-                    .filter(p -> p.isEqual(client))
-                    .flatMap(Player::getPlayerMatesStream)
-                    .forEach(p -> p.getSocket().sendEvent(MESSAGE, msg));
+            final Player player = players.get(client.getSessionId());
+            if (player != null) {
+                player.getPlayerMatesStream()
+                        .forEach(p -> p.getSocket().sendEvent(MESSAGE, msg));
+            }
         });
 
         server.addDisconnectListener(client -> {
             log.info("Disconnected " + client.getSessionId());
-            playerList.removeIf(p -> p.isEqual(client));
-            rooms.parallelStream()
-                    .filter(room -> room.disconnect(client))
-                    .forEach(r -> {
-                        DisconnectedMessage msg = new DisconnectedMessage();
-                        msg.setClientID(client.getSessionId().toString());
-                        try {
-                            String json = converter.toJson(msg);
-                            r.getPlayers().forEach(p -> p.getSocket().sendEvent(MESSAGE, json));
-                        } catch (NetworkTransport.ConverterException e) {
-                            e.printStackTrace(System.err);
-                        }
-                    });
+            final Player player = players.remove(client.getSessionId());
+            if (player != null && player.getRoom().disconnect(client)) {
+                final DisconnectedMessage msg = new DisconnectedMessage();
+                msg.setClientID(client.getSessionId().toString());
+                try {
+                    final String json = converter.toJson(msg);
+                    player.getPlayerMatesStream().forEach(p -> p.getSocket().sendEvent(MESSAGE, json));
+                } catch (NetworkTransport.ConverterException e) {
+                    e.printStackTrace(System.err);
+                }
+            }
         });
     }
     
     public void start() {
         server.start();
         Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
+    }
+
+    private synchronized Room findFreeOrCreateAndConnect(SocketIOClient socketIOClient) {
+        Room room = rooms
+                .parallelStream()
+                .filter(Room::hasFreePlace)
+                .findAny().orElseGet(() -> {
+                    Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID());
+                    rooms.add(newRoom);
+                    return newRoom;
+                });
+
+        Player player = new Player(room, socketIOClient);
+        players.put(socketIOClient.getSessionId(), player);
+        room.connect(player);
+        repository.update(toModel(room));
+
+        return room;
     }
 
     private GameModel toModel(final Room room) {

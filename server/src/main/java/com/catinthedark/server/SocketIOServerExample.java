@@ -9,8 +9,10 @@ import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.flywaydb.core.Flyway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sql2o.Sql2o;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,23 +25,22 @@ public class SocketIOServerExample {
     private static final Logger log = LoggerFactory.getLogger(SocketIOServerExample.class);
     public static Long MAX_PLAYERS = 2L;
 
-    static private String defaultPort = "9000";
     static private String MESSAGE = "message";
 
     public static void main(String[] args) {
-        String portStr = null;
-        if (args.length > 0) portStr = args[0];
-        if (portStr == null || portStr.isEmpty()) portStr = defaultPort;
-        final Integer port = Integer.valueOf(portStr);
-
         final List<Room> rooms = new ArrayList<>();
         final List<Player> playerList = new ArrayList<>();
 
         final ObjectMapper mapper = new ObjectMapper();
+        final Sql2o sql2o = new Sql2o(Configs.getJdbcURL(), Configs.getDbUser(), Configs.getDbPassword());
+        final Flyway flyway = new Flyway();
+        flyway.setDataSource(sql2o.getDataSource());
+        flyway.migrate();
+        final RoomRepository repository = new RoomRepository(sql2o, mapper);
         final JacksonConverter converter = new JacksonConverter(mapper);
 
         final Configuration config = new Configuration();
-        config.setPort(port);
+        config.setPort(Configs.getPort());
         final SocketConfig socketConfig = new SocketConfig();
         socketConfig.setReuseAddress(true);
         config.setSocketConfig(socketConfig);
@@ -54,14 +55,17 @@ public class SocketIOServerExample {
                     .findAny().orElseGet(() -> {
                         Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID());
                         rooms.add(newRoom);
+                        repository.create(toModel(newRoom));
                         return newRoom;
                     });
 
             Player player = new Player(room, socketIOClient);
             playerList.add(player);
             room.connect(player);
+            repository.update(toModel(room));
 
             room.doIfReady((players) -> {
+                repository.startGame(room.getName().toString());
                 log.info("Game started in room " + room.getName() + " " + players.stream().map(Player::getIP).collect(Collectors.joining(",")));
                 players.forEach(p -> {
                     GameStartedMessage gameStartedMessage = new GameStartedMessage();
@@ -109,6 +113,26 @@ public class SocketIOServerExample {
 
         server.start();
         Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
+    }
+    
+    static RoomRepository.GameModel toModel(final Room room) {
+        RoomRepository.GameModel game = new RoomRepository.GameModel();
+        game.setMaxPlayers(room.getMaxPlayers());
+        game.setName(room.getName().toString());
+        game.setPlayers(
+                room.getPlayers()
+                        .stream()
+                        .map(p -> toModel(p))
+                        .collect(Collectors.toList()));
+        return game;
+    }
+    
+    static RoomRepository.PlayerModel toModel(final Player player) {
+        RoomRepository.PlayerModel pm = new RoomRepository.PlayerModel();
+        pm.setStatus(player.getStatus());
+        pm.setIp(player.getIP());
+        pm.setUuid(player.getSocket().getSessionId().toString());
+        return pm;
     }
 
     static class Room {

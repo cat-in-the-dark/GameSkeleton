@@ -104,6 +104,7 @@ public class SocketIOService {
                 } catch (NetworkTransport.ConverterException e) {
                     e.printStackTrace(System.err);
                 }
+                player.getRoom().setPlayed(true);
                 repository.updateDisconnect(player.getRoom().getName(), client.getSessionId());
             }
         });
@@ -117,7 +118,7 @@ public class SocketIOService {
     private synchronized Room findFreeOrCreateAndConnect(SocketIOClient socketIOClient) {
         Room room = rooms
                 .parallelStream()
-                .filter(Room::hasFreePlace)
+                .filter(Room::waitingForStart)
                 .findAny().orElseGet(() -> {
                     Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID());
                     rooms.add(newRoom);

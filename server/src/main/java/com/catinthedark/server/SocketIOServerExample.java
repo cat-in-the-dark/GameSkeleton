@@ -25,29 +25,8 @@ public class SocketIOServerExample {
         final RoomRepository repository = new RoomRepository(sql2o, mapper);
 
         LOG.info("Init SocketIOService");
-        final SocketIOServer server = setupNettyServer(mapper, repository);
         final SocketIOService socketIOService = new SocketIOService(
-                repository, new JacksonConverter(mapper), mapper, server);
+                repository, new JacksonConverter(mapper), mapper);
         socketIOService.start();
-    }
-    
-    private static SocketIOServer setupNettyServer(ObjectMapper objectMapper, RoomRepository roomRepository) {
-        Configuration config = new Configuration();
-        config.setPort(Configs.getPort());
-        SocketConfig socketConfig = new SocketConfig();
-        socketConfig.setReuseAddress(true);
-        config.setSocketConfig(socketConfig);
-        SocketIOServer server = new SocketIOServer(config);
-        ExtendedPipelineFactory pipeline = new ExtendedPipelineFactory();
-        pipeline.registerJsonHandler("/games.json", () -> {
-            try {
-                return objectMapper.writeValueAsString(roomRepository.findAll());
-            } catch (JsonProcessingException e) {
-                return "{\"error\": \""+e.getMessage()+"\"}";
-            }
-        });
-        server.setPipelineFactory(pipeline);
-        
-        return server;
     }
 }

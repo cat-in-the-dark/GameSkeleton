@@ -4,9 +4,12 @@ import com.catinthedark.lib.network.JacksonConverter;
 import com.catinthedark.lib.network.NetworkTransport;
 import com.catinthedark.lib.network.messages.DisconnectedMessage;
 import com.catinthedark.lib.network.messages.GameStartedMessage;
+import com.catinthedark.server.Configs;
 import com.catinthedark.server.persist.GameModel;
 import com.catinthedark.server.persist.PlayerModel;
 import com.catinthedark.server.persist.RoomRepository;
+import com.corundumstudio.socketio.Configuration;
+import com.corundumstudio.socketio.SocketConfig;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -34,10 +37,15 @@ public class SocketIOService {
     public SocketIOService(
             final RoomRepository repository, 
             final JacksonConverter converter,
-            final ObjectMapper mapper,
-            final SocketIOServer server
+            final ObjectMapper mapper
     ) {
-        this.server = server;
+        Configuration config = new Configuration();
+        config.setPort(Configs.getPort());
+        SocketConfig socketConfig = new SocketConfig();
+        socketConfig.setReuseAddress(true);
+        config.setSocketConfig(socketConfig);
+        
+        this.server = new SocketIOServer(config);
         this.converter = converter;
         this.repository = repository;
         this.mapper = mapper;

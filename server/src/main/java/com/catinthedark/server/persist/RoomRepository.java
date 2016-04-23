@@ -1,5 +1,6 @@
 package com.catinthedark.server.persist;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,16 +11,14 @@ import org.sql2o.Sql2o;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RoomRepository {
     private final Sql2o sql;
     private final ObjectMapper objectMapper;
     private final static Logger LOG = LoggerFactory.getLogger(RoomRepository.class);
-    
+
     private final ResultSetHandler<GameModel> resultHandler = new ResultSetHandler<GameModel>() {
         @Override
         public GameModel handle(ResultSet resultSet) throws SQLException {
@@ -37,7 +36,7 @@ public class RoomRepository {
         this.sql = sql2o;
         this.objectMapper = objectMapper;
     }
-    
+
     public void create(final GameModel model) {
         try(final Connection conn = sql.open()) {
             String json = objectMapper.writeValueAsString(model);
@@ -49,20 +48,22 @@ public class RoomRepository {
             LOG.error("Can't create " + model + " : " + e.getMessage(), e);
         }
     }
-    
-    public void update(final GameModel model) {
-        try(final Connection conn = sql.open()) {
-            String json = objectMapper.writeValueAsString(model);
-            LOG.info("Updating in db " + json);
-            conn.createQuery("UPDATE game SET meta = :meta::jsonb WHERE meta->>'name' = :name")
-                    .addParameter("meta", json)
-                    .addParameter("name", model.getName())
-                    .executeUpdate();
-        } catch (Exception e) {
-            LOG.error("Can't update " + model + " : " + e.getMessage(), e);
-        }
+
+    private void updateQuery(final Connection conn, final GameModel model) throws JsonProcessingException {
+        String json = objectMapper.writeValueAsString(model);
+        LOG.info("Updating in db " + json);
+        conn.createQuery("UPDATE game SET meta = :meta::jsonb WHERE meta->>'name' = :name")
+                .addParameter("meta", json)
+                .addParameter("name", model.getName())
+                .executeUpdate();
     }
-    
+
+    private GameModel findQuery(final Connection conn, final String gameName) {
+        return conn.createQuery("SELECT meta FROM game WHERE meta->>'name' = :name")
+                .addParameter("name", gameName)
+                .executeAndFetchFirst(resultHandler);
+    }
+
     public List<GameModel> findAll() {
         try(final Connection conn = sql.open()) {
             return conn
@@ -77,17 +78,43 @@ public class RoomRepository {
     }
     
     public void startGame(final String gameName) {
-        try(final Connection conn = sql.open()) {
-            GameModel model = conn.createQuery("SELECT meta FROM game WHERE meta->>'name' = :name")
-                    .addParameter("name", gameName)
-                    .executeAndFetchFirst(resultHandler);
+        try(final Connection conn = sql.beginTransaction()) {
+            GameModel model = findQuery(conn, gameName);
             if (model != null) {
                 model.setStartedAt(new Date());
                 model.setPlayed(true);
-                update(model);
+                updateQuery(conn, model);
             }
+            conn.commit();
         } catch (Exception e) {
             LOG.error("Can't update game " + gameName + " : " + e.getMessage(), e);
+        }
+    }
+
+    public void updateDisconnect(final UUID gameName, final UUID playerId) {
+        try(final Connection conn = sql.beginTransaction()) {
+            final GameModel model = findQuery(conn, gameName.toString());
+            model.getPlayers().forEach(p -> {
+                if (Objects.equals(UUID.fromString(p.getUuid()), playerId)) {
+                    p.setDisconnectedAt(new Date());
+                }
+            });
+            updateQuery(conn, model);
+            conn.commit();
+        } catch (Exception e) {
+            LOG.error("Can't update disconnection message " + gameName + " : " + e.getMessage(), e);
+        }
+    }
+
+    public void connect(UUID gameName, PlayerModel playerModel) {
+        try(final Connection conn = sql.beginTransaction()) {
+            final GameModel model = findQuery(conn, gameName.toString());
+            playerModel.setConnectedAt(new Date());
+            model.getPlayers().add(playerModel);
+            updateQuery(conn, model);
+            conn.commit();
+        } catch (Exception e) {
+            LOG.error("Can't connect player " + playerModel + " to room " + gameName + " : " + e.getMessage(), e);
         }
     }
 }

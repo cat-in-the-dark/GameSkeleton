@@ -21,11 +21,13 @@ public final class Room {
         return players.size() < maxPlayers;
     }
 
-    public synchronized void connect(Player player) {
+    public synchronized boolean connect(Player player) {
         if (hasFreePlace()) {
             if (players.size() == 0) player.setStatus("admin");
             players.put(player.getSocket().getSessionId(), player);
+            return true;
         }
+        return false;
     }
 
     /**

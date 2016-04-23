@@ -104,6 +104,7 @@ public class SocketIOService {
                 } catch (NetworkTransport.ConverterException e) {
                     e.printStackTrace(System.err);
                 }
+                repository.updateDisconnect(player.getRoom().getName(), client.getSessionId());
             }
         });
     }
@@ -120,13 +121,15 @@ public class SocketIOService {
                 .findAny().orElseGet(() -> {
                     Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID());
                     rooms.add(newRoom);
+                    repository.create(toModel(newRoom));
                     return newRoom;
                 });
 
         Player player = new Player(room, socketIOClient);
         players.put(socketIOClient.getSessionId(), player);
-        room.connect(player);
-        repository.update(toModel(room));
+        if (room.connect(player)) {
+            repository.connect(room.getName(), toModel(player));
+        }
 
         return room;
     }

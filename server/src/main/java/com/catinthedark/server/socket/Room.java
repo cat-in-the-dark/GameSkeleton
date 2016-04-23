@@ -73,4 +73,8 @@ public final class Room {
     public Boolean getPlayed() {
         return played;
     }
+
+    public boolean readyToDelete() {
+        return played && players.size() == 0;
+    }
 }

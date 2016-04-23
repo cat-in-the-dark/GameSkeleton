@@ -18,8 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +28,7 @@ public class SocketIOService {
     private static Long MAX_PLAYERS = 2L;
     private static String MESSAGE = "message";
 
-    private final List<Room> rooms = new ArrayList<>();
+    private final Map<UUID, Room> rooms = new ConcurrentHashMap<>();
     private final Map<UUID, Player> players = new ConcurrentHashMap<>();
     
     private final SocketIOServer server;
@@ -78,7 +76,7 @@ public class SocketIOService {
                         e.printStackTrace(System.err);
                     }
                 });
-            }, (r) -> sendNotification(r));
+            }, this::sendNotification);
             log.info("User serviced " + socketIOClient.getSessionId().toString());
         });
 
@@ -108,6 +106,9 @@ public class SocketIOService {
                 }
                 player.getRoom().setPlayed(true);
                 repository.updateDisconnect(player.getRoom().getName(), client.getSessionId());
+                if (player.getRoom().readyToDelete()) {
+                    rooms.remove(player.getRoom().getName());
+                }
             }
         });
     }
@@ -118,12 +119,13 @@ public class SocketIOService {
     }
 
     private synchronized Room findFreeOrCreateAndConnect(SocketIOClient socketIOClient) {
-        Room room = rooms
+        Room room = rooms.values()
                 .parallelStream()
                 .filter(Room::waitingForStart)
                 .findAny().orElseGet(() -> {
-                    Room newRoom = new Room(MAX_PLAYERS, UUID.randomUUID());
-                    rooms.add(newRoom);
+                    UUID roomName = UUID.randomUUID();
+                    Room newRoom = new Room(MAX_PLAYERS, roomName);
+                    rooms.put(roomName, newRoom);
                     repository.create(toModel(newRoom));
                     return newRoom;
                 });

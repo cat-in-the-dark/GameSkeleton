@@ -1,5 +1,6 @@
 package com.catinthedark.server.persist;
 
+import com.catinthedark.server.GeoIP;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ public class RoomRepository {
     private final Sql2o sql;
     private final ObjectMapper objectMapper;
     private final static Logger LOG = LoggerFactory.getLogger(RoomRepository.class);
+    private final GeoIP geoIPService;
 
     private final ResultSetHandler<GameModel> resultHandler = new ResultSetHandler<GameModel>() {
         @Override
@@ -35,6 +37,7 @@ public class RoomRepository {
     public RoomRepository(final Sql2o sql2o, final ObjectMapper objectMapper) {
         this.sql = sql2o;
         this.objectMapper = objectMapper;
+        this.geoIPService = new GeoIP(objectMapper);
     }
 
     public void create(final GameModel model) {
@@ -110,6 +113,7 @@ public class RoomRepository {
         try(final Connection conn = sql.beginTransaction()) {
             final GameModel model = findQuery(conn, gameName.toString());
             playerModel.setConnectedAt(new Date());
+            playerModel.setGeo(geoIPService.findByIp(playerModel.getIp()));
             model.getPlayers().add(playerModel);
             updateQuery(conn, model);
             conn.commit();

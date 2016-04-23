@@ -1,6 +1,7 @@
 package com.catinthedark.server.persist;
 
 import java.util.Date;
+import java.util.Map;
 
 public final class PlayerModel {
     private String ip;
@@ -8,6 +9,7 @@ public final class PlayerModel {
     private String status;
     private Date disconnectedAt;
     private Date connectedAt;
+    private Map<String, Object> geo;
 
     public String getIp() {
         return ip;
@@ -49,6 +51,14 @@ public final class PlayerModel {
         this.connectedAt = connectedAt;
     }
 
+    public void setGeo(Map<String, Object> geo) {
+        this.geo = geo;
+    }
+
+    public Map<String, Object> getGeo() {
+        return geo;
+    }
+    
     @Override
     public String toString() {
         return "PlayerModel{" +
@@ -57,6 +67,7 @@ public final class PlayerModel {
                 ", status='" + status + '\'' +
                 ", disconnectedAt=" + disconnectedAt +
                 ", connectedAt=" + connectedAt +
+                ", geo=" + geo +
                 '}';
     }
 }

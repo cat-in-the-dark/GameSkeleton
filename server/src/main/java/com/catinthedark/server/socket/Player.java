@@ -2,6 +2,7 @@ package com.catinthedark.server.socket;
 
 import com.corundumstudio.socketio.SocketIOClient;
 
+import java.net.InetSocketAddress;
 import java.util.stream.Stream;
 
 public final class Player {
@@ -43,6 +44,11 @@ public final class Player {
     }
 
     public String getIP() {
-        return socket.getRemoteAddress().toString();
+        try {
+            InetSocketAddress address = (InetSocketAddress) socket.getRemoteAddress();
+            return address.getHostString();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

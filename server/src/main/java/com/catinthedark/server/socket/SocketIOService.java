@@ -5,6 +5,7 @@ import com.catinthedark.lib.network.NetworkTransport;
 import com.catinthedark.lib.network.messages.DisconnectedMessage;
 import com.catinthedark.lib.network.messages.GameStartedMessage;
 import com.catinthedark.server.Configs;
+import com.catinthedark.server.NotificationsService;
 import com.catinthedark.server.persist.GameModel;
 import com.catinthedark.server.persist.PlayerModel;
 import com.catinthedark.server.persist.RoomRepository;
@@ -16,8 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,11 +35,13 @@ public class SocketIOService {
     private final RoomRepository repository;
     private final JacksonConverter converter;
     private final ObjectMapper mapper;
+    private final NotificationsService notificationsService;
     
     public SocketIOService(
             final RoomRepository repository, 
             final JacksonConverter converter,
-            final ObjectMapper mapper
+            final ObjectMapper mapper,
+            final NotificationsService notificationsService
     ) {
         Configuration config = new Configuration();
         config.setPort(Configs.getPort());
@@ -52,6 +53,7 @@ public class SocketIOService {
         this.converter = converter;
         this.repository = repository;
         this.mapper = mapper;
+        this.notificationsService = notificationsService;
         
         setup();
     }
@@ -160,15 +162,7 @@ public class SocketIOService {
     }
     
     private void sendNotification(final Room room) {
-        new Thread(() -> {
-            try {
-                URL url = new URL(Configs.getNotificationUrl("Somebody wont to play 'Za bochok'. Players count on the server is " + players.size() + ". Rooms count is " + rooms.size()));
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                log.info("Notification status for room " + room + " : "+ connection.getResponseCode());
-                connection.disconnect();
-            } catch (Exception e) {
-                log.error("Can't send notification " + e.getMessage(), e);
-            } 
-        }).start();
+        String msg = "Somebody wont to play 'Za bochok'. Players count on the server is " + players.size() + ". Rooms count is " + rooms.size();
+        notificationsService.sendNotification(msg);
     }
 }

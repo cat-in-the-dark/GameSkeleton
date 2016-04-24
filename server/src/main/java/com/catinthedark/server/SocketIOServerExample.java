@@ -26,7 +26,7 @@ public class SocketIOServerExample {
 
         LOG.info("Init SocketIOService");
         final SocketIOService socketIOService = new SocketIOService(
-                repository, new JacksonConverter(mapper), mapper);
+                repository, new JacksonConverter(mapper), mapper, new NotificationsService());
         socketIOService.start();
     }
 }

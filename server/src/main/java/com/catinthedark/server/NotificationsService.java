@@ -27,7 +27,7 @@ public class NotificationsService {
                 final GameModel game = gameModelFuture.get();
                 if (game.getPlayers().size() == 1) {
                     final PlayerModel player = game.getPlayers().get(0);
-                    if (player.getDisconnectedAt() != null) {
+                    if (player.getDisconnectedAt() == null) {
                         final String location = String.format("Country %s, City %s, Region %s. ", 
                                 player.getGeo().getOrDefault("country", "unknown"), 
                                 player.getGeo().getOrDefault("city", "unknown"), 
@@ -46,6 +46,6 @@ public class NotificationsService {
             } catch (Exception e) {
                 LOG.error("Can't send notification " + e.getMessage(), e);
             } 
-        }, 5, TimeUnit.SECONDS);
+        }, 3, TimeUnit.SECONDS);
     }
 }

@@ -1,5 +1,9 @@
 package com.catinthedark.server;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLEncoder;
+
 public class Configs {
     private static ProcessBuilder pb = new ProcessBuilder();
     
@@ -23,9 +27,9 @@ public class Configs {
         return pb.environment().getOrDefault("SPRING_DB_PASSWORD", "gamesserverpwd");
     }
 
-    public static String getNotificationUrl(String message) {
+    public static String getNotificationUrl(String message) throws UnsupportedEncodingException {
         String key = pb.environment().get("TELEGRAM_KEY");
         String chatId = pb.environment().get("TELEGRAM_CHAT_ID");
-        return String.format("https://api.telegram.org/bot%s/sendMessage?chat_id=%s&disable_web_page_preview=1&text=%s", key, chatId, message);
+        return String.format("https://api.telegram.org/bot%s/sendMessage?chat_id=%s&disable_web_page_preview=1&text=%s", key, chatId, URLEncoder.encode(message, "UTF-8"));
     }
 }

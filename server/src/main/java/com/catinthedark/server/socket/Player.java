@@ -2,7 +2,6 @@ package com.catinthedark.server.socket;
 
 import com.corundumstudio.socketio.SocketIOClient;
 
-import java.net.InetSocketAddress;
 import java.util.stream.Stream;
 
 public final class Player {

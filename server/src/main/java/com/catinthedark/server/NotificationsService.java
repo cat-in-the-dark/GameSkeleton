@@ -31,14 +31,14 @@ public class NotificationsService {
                 if (game.getPlayers().size() == 1) {
                     final PlayerModel player = game.getPlayers().get(0);
                     if (player.getDisconnectedAt() == null) {
-                        String location = "From unknown location.";
+                        String location = "\nFrom unknown location.";
                         if (player.getGeo() != null) {
-                            location = String.format("From country %s, City %s, Region %s. ",
+                            location = String.format("\nFrom country %s, City %s, Region %s. ",
                                     player.getGeo().getOrDefault("country", "unknown"),
                                     player.getGeo().getOrDefault("city", "unknown"),
                                     player.getGeo().getOrDefault("regionName", "unknown"));
                         }
-                        final String message = baseMessage + location + "Players count on the server is " + players.size() + ". Rooms count is " + rooms.size();
+                        final String message = baseMessage + location + "\nPlayers count on the server is " + players.size() + ". Rooms count is " + rooms.size();
                         final URL url = new URL(Configs.getNotificationUrl(message));
                         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         LOG.info("Notification status " + message + ": " + connection.getResponseCode());

@@ -23,7 +23,7 @@ public class GeoIP {
         this.executor = Executors.newFixedThreadPool(4);
     }
 
-    public Future<Map<String, Object>> findByIp(String ipAddress) {
+    public Future<Map<String, Object>> findByIp(final String ipAddress) {
         return executor.submit(() -> {
             if (ipAddress == null) return null;
             LOG.info("Search geo info " + ipAddress);

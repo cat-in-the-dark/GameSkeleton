@@ -23,7 +23,7 @@ public class NotificationsService {
         this.executor = Executors.newScheduledThreadPool(4);
         this.roomRepository = roomRepository;
     }
-    
+
     public void sendNotification(final String baseMessage, final Map<UUID, Player> players, final Map<UUID, Room> rooms, final Room room) {
         executor.schedule(() -> {
             try {
@@ -51,7 +51,7 @@ public class NotificationsService {
                 }
             } catch (Exception e) {
                 LOG.error("Can't send notification " + e.getMessage(), e);
-            } 
-        }, 5, TimeUnit.SECONDS);
+            }
+        }, 2, TimeUnit.SECONDS);
     }
 }

@@ -28,11 +28,14 @@ public class NotificationsService {
                 if (game.getPlayers().size() == 1) {
                     final PlayerModel player = game.getPlayers().get(0);
                     if (player.getDisconnectedAt() == null) {
-                        final String location = String.format("Country %s, City %s, Region %s. ", 
-                                player.getGeo().getOrDefault("country", "unknown"), 
-                                player.getGeo().getOrDefault("city", "unknown"), 
-                                player.getGeo().getOrDefault("regionName", "unknown"));
-                        final String message = baseMessage + "From " + location + "Players count on the server is " + players.size() + ". Rooms count is " + rooms.size();
+                        String location = "From unknown location.";
+                        if (player.getGeo() != null) {
+                            location = String.format("From country %s, City %s, Region %s. ",
+                                    player.getGeo().getOrDefault("country", "unknown"),
+                                    player.getGeo().getOrDefault("city", "unknown"),
+                                    player.getGeo().getOrDefault("regionName", "unknown"));
+                        }
+                        final String message = baseMessage + location + "Players count on the server is " + players.size() + ". Rooms count is " + rooms.size();
                         final URL url = new URL(Configs.getNotificationUrl(message));
                         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         LOG.info("Notification status " + message + ": " + connection.getResponseCode());
@@ -46,6 +49,6 @@ public class NotificationsService {
             } catch (Exception e) {
                 LOG.error("Can't send notification " + e.getMessage(), e);
             } 
-        }, 3, TimeUnit.SECONDS);
+        }, 5, TimeUnit.SECONDS);
     }
 }

@@ -75,6 +75,17 @@ public class RoomRepository {
         });
     }
     
+    public Future<GameModel> find(final UUID roomName) {
+        return executor.submit(() -> {
+            try(final Connection conn = sql.open()) {
+                return findQuery(conn, roomName.toString());
+            } catch (Exception e) {
+                LOG.error("Can't find all : " + e.getMessage(), e);
+                return null;
+            }
+        });
+    }
+    
     public void startGame(final String gameName) {
         executor.submit(() -> {
             try(final Connection conn = sql.beginTransaction()) {
@@ -128,6 +139,7 @@ public class RoomRepository {
             try(final Connection conn = sql.beginTransaction()) {
                 final Map<String, Object> geo = 
                         geoIPService.findByIp(playerModel.getIp()).get(15, TimeUnit.SECONDS);
+                LOG.info("Update player geo " + geo);
                 final GameModel model = findQuery(conn, gameName.toString());
                 model.getPlayers().stream().forEach(p -> {
                     if (Objects.equals(
@@ -136,6 +148,7 @@ public class RoomRepository {
                         p.setGeo(geo);
                     }
                 });
+                updateQuery(conn, model);
                 conn.commit();
             } catch (Exception e) {
                 LOG.error("Can't update player's geo " + e.getMessage(), e);

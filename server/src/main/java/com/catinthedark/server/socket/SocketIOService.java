@@ -162,7 +162,7 @@ public class SocketIOService {
     }
     
     private void sendNotification(final Room room) {
-        String msg = "Somebody wont to play 'Za bochok'. Players count on the server is " + players.size() + ". Rooms count is " + rooms.size();
-        notificationsService.sendNotification(msg);
+        String msg = "Somebody wont to play 'Za bochok'.";
+        notificationsService.sendNotification(msg, players, rooms, repository.find(room.getName()));
     }
 }

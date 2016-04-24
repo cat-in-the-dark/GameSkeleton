@@ -26,6 +26,7 @@ public class GeoIP {
     public Future<Map<String, Object>> findByIp(String ipAddress) {
         return executor.submit(() -> {
             if (ipAddress == null) return null;
+            LOG.info("Search geo info " + ipAddress);
             try {
                 Map<String, Object> model = mapper.readValue(new URL(host + ipAddress), new TypeReference<Map<String, Object>>(){});
                 if (Objects.equals(model.get("status"), "success")) {

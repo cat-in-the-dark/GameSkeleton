@@ -45,8 +45,11 @@ public final class Player {
 
     public String getIP() {
         try {
-            InetSocketAddress address = (InetSocketAddress) socket.getRemoteAddress();
-            return address.getHostString();
+            String address = socket.getHandshakeData().getHttpHeaders().get("X-Forwarded-For");
+            if (address == null) {
+                address = socket.getHandshakeData().getAddress().getHostString();
+            }
+            return address;
         } catch (Exception e) {
             return null;
         }

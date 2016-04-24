@@ -12,7 +12,7 @@ mainClassName = 'com.catinthedark.server.SocketIOServerExample'
 
 buildscript {
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.2'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
     }
 }
 

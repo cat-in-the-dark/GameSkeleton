@@ -1,7 +1,6 @@
 package com.catinthedark.server;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URLEncoder;
 
 public class Configs {

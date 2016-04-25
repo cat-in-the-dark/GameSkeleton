@@ -29,16 +29,16 @@ public class SocketIOService {
 
     private final Map<UUID, Room> rooms = new ConcurrentHashMap<>();
     private final Map<UUID, Player> players = new ConcurrentHashMap<>();
-    
+
     private final SocketIOServer server;
 
     private final RoomRepository repository;
     private final JacksonConverter converter;
     private final ObjectMapper mapper;
     private final NotificationsService notificationsService;
-    
+
     public SocketIOService(
-            final RoomRepository repository, 
+            final RoomRepository repository,
             final JacksonConverter converter,
             final ObjectMapper mapper,
             final NotificationsService notificationsService
@@ -48,16 +48,16 @@ public class SocketIOService {
         SocketConfig socketConfig = new SocketConfig();
         socketConfig.setReuseAddress(true);
         config.setSocketConfig(socketConfig);
-        
+
         this.server = new SocketIOServer(config);
         this.converter = converter;
         this.repository = repository;
         this.mapper = mapper;
         this.notificationsService = notificationsService;
-        
+
         setup();
     }
-    
+
     private void setup() {
         server.addConnectListener(socketIOClient -> {
             log.info("New connection "+socketIOClient.getSessionId().toString()+ " " + server.getAllClients().size());
@@ -114,7 +114,7 @@ public class SocketIOService {
             }
         });
     }
-    
+
     public void start() {
         server.start();
         Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
@@ -160,9 +160,9 @@ public class SocketIOService {
         pm.setUuid(player.getSocket().getSessionId().toString());
         return pm;
     }
-    
+
     private void sendNotification(final Room room) {
-        String msg = "Somebody wont to play 'Za bochok'.";
+        String msg = "Somebody wants to play 'Za bochok'.";
         notificationsService.sendNotification(msg, players, rooms, room);
     }
 }

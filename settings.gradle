@@ -1,2 +1,3 @@
 rootProject.name = 'base-server'
 
+include 'server', 'example'

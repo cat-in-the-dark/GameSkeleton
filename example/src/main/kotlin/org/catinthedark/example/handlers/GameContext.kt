@@ -1,4 +1,4 @@
-package org.catinthedark.server.handlers
+package org.catinthedark.example.handlers
 
 import org.catinthedark.server.Context
 

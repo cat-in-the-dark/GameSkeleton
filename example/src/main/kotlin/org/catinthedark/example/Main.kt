@@ -1,6 +1,9 @@
-package org.catinthedark.server
+package org.catinthedark.example
 
-import org.catinthedark.server.handlers.GameContext
+import org.catinthedark.server.Context
+import org.catinthedark.server.EventBus
+import org.catinthedark.server.Holder
+import org.catinthedark.example.handlers.GameContext
 import org.catinthedark.server.invokers.AsyncInvoker
 import org.catinthedark.server.invokers.SimpleInvoker
 import org.catinthedark.server.invokers.StickyInvoker
@@ -22,7 +25,7 @@ class Main {
 
             val ctx = contextBuilder() // actually its a struct for all room data
             val holder = Holder(ctx, "REQUEST")
-            EventBus.register("org.catinthedark.server.handlers")
+            EventBus.register("org.catinthedark.example.handlers")
             EventBus.send("HELLO", holder, async) // TODO: select ctx from some context holder
             EventBus.send(1, holder, sticky)
             EventBus.send(1.3, holder, sticky)

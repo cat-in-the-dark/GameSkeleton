@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
  * your message will be fired only in this thread.
  * This Invoker provides thread safety for messaging.
  */
-class QueueInvoker : DeferrableInvoker {
+class SimpleInvoker : DeferrableInvoker {
     private val executor = Executors.newSingleThreadScheduledExecutor()
     private val log = LoggerFactory.getLogger(this::class.java)
 

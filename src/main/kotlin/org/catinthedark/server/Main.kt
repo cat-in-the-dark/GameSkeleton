@@ -2,7 +2,7 @@ package org.catinthedark.server
 
 import org.catinthedark.server.handlers.GameContext
 import org.catinthedark.server.invokers.AsyncInvoker
-import org.catinthedark.server.invokers.QueueInvoker
+import org.catinthedark.server.invokers.SimpleInvoker
 import org.catinthedark.server.invokers.StickyInvoker
 
 class Main {
@@ -15,8 +15,8 @@ class Main {
         }
 
         fun starter(contextBuilder: () -> Context) {
-            val queue1 = QueueInvoker()
-            val queue2 = QueueInvoker()
+            val queue1 = SimpleInvoker()
+            val queue2 = SimpleInvoker()
             val async = AsyncInvoker()
             val sticky = StickyInvoker()
 

@@ -1,14 +1,12 @@
-package org.catinthedark.server.serialization
+package org.catinthedark.shared.serialization
 
-import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io.Input
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
 import org.slf4j.LoggerFactory
 
-class NettyKryoDecoder(
-        private val kryo: Kryo = Kryo()
+class NettyDecoder(
+        private val deserializer: Deserializer
 ) : ByteToMessageDecoder() {
     private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -17,12 +15,9 @@ class NettyKryoDecoder(
         if (len == 0) return
 
         try {
-            Input().use { input ->
-                val bytes = ByteArray(len)
-                msg.readBytes(bytes)
-                input.buffer = bytes
-                out.add(kryo.readClassAndObject(input))
-            }
+            val bytes = ByteArray(len)
+            msg.readBytes(bytes)
+            out.add(deserializer(bytes))
         } catch (e: Exception) {
             log.error("Can't decode msg $msg: ${e.message}", e)
         }

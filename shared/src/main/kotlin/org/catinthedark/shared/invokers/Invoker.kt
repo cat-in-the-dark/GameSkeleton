@@ -1,4 +1,4 @@
-package org.catinthedark.server.invokers
+package org.catinthedark.shared.invokers
 
 interface Invoker {
     fun invoke(func: () -> Unit)

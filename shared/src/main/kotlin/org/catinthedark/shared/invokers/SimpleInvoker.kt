@@ -1,4 +1,4 @@
-package org.catinthedark.server.invokers
+package org.catinthedark.shared.invokers
 
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors

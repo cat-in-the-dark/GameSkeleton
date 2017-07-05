@@ -1,4 +1,4 @@
-package org.catinthedark.server
+package org.catinthedark.shared
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)

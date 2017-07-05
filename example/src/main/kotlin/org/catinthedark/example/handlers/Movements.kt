@@ -1,6 +1,6 @@
 package org.catinthedark.example.handlers
 
-import org.catinthedark.server.Handler
+import org.catinthedark.shared.Handler
 import org.catinthedark.server.Holder
 
 @Handler(priority = 0)

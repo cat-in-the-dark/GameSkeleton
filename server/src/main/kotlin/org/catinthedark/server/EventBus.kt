@@ -1,7 +1,8 @@
 package org.catinthedark.server
 
-import org.catinthedark.server.invokers.DeferrableInvoker
-import org.catinthedark.server.invokers.Invoker
+import org.catinthedark.shared.invokers.DeferrableInvoker
+import org.catinthedark.shared.invokers.Invoker
+import org.catinthedark.shared.Handler
 import org.reflections.Reflections
 import org.reflections.scanners.MethodAnnotationsScanner
 import org.slf4j.LoggerFactory

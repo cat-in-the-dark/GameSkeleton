@@ -1,6 +1,5 @@
 package org.catinthedark.server
 
-import com.esotericsoftware.kryo.Kryo
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.AbstractChannel
 import io.netty.channel.ChannelInitializer
@@ -9,11 +8,16 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
-import org.catinthedark.server.serialization.NettyKryoDecoder
-import org.catinthedark.server.serialization.NettyKryoEncoder
+import org.catinthedark.shared.serialization.Deserializer
+import org.catinthedark.shared.serialization.NettyDecoder
+import org.catinthedark.shared.serialization.NettyEncoder
+import org.catinthedark.shared.serialization.Serializer
 import org.slf4j.LoggerFactory
 
-class TCPServer {
+class TCPServer(
+        private val serializer: Serializer,
+        private val deserializer: Deserializer
+) {
     private val PORT = 8080
     private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -29,9 +33,9 @@ class TCPServer {
                         override fun initChannel(ch: AbstractChannel) {
                             val pipe = ch.pipeline()
 
-                            val kryo = Kryo()
-                            pipe.addLast("decoder", NettyKryoDecoder(kryo))
-                            pipe.addLast("encoder", NettyKryoEncoder(kryo))
+                            pipe.addLast("decoder", NettyDecoder(deserializer))
+                            pipe.addLast("encoder", NettyEncoder(serializer))
+                            pipe.addLast("handler", GameHandler())
                         }
                     })
                     .childOption(ChannelOption.SO_KEEPALIVE, true)

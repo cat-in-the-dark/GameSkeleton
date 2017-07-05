@@ -1,4 +1,4 @@
-package org.catinthedark.server.invokers
+package org.catinthedark.shared.invokers
 
 class StickyInvoker: Invoker {
     override fun shutdown() {

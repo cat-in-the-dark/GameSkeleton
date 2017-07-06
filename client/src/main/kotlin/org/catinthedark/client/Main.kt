@@ -1,14 +1,14 @@
 package org.catinthedark.client
 
-import org.catinthedark.shared.serialization.KryoSerializer
+import com.esotericsoftware.kryo.Kryo
 
 class Main {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
             println("Hello!")
-            val kryo = KryoSerializer()
-            val client = TCPClient(kryo, kryo)
+            val kryo = Kryo()
+            val client = TCPClient(kryo)
             client.connect("0.0.0.0", 8080)
         }
     }

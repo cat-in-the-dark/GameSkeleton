@@ -1,17 +1,15 @@
 package org.catinthedark.client
 
+import com.esotericsoftware.kryo.Kryo
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
-import org.catinthedark.shared.serialization.Deserializer
 import org.catinthedark.shared.serialization.NettyDecoder
 import org.catinthedark.shared.serialization.NettyEncoder
-import org.catinthedark.shared.serialization.Serializer
 
 class TCPClient(
-        private val serializer: Serializer,
-        private val deserializer: Deserializer
+        private val kryo: Kryo
 ) {
     private val group = NioEventLoopGroup()
     private val bootstrap = Bootstrap()
@@ -23,8 +21,8 @@ class TCPClient(
                     override fun initChannel(ch: AbstractChannel) {
                         val pipe = ch.pipeline()
 
-                        pipe.addLast("decoder", NettyDecoder(deserializer))
-                        pipe.addLast("encoder", NettyEncoder(serializer))
+                        pipe.addLast("decoder", NettyDecoder(kryo))
+                        pipe.addLast("encoder", NettyEncoder(kryo))
                     }
                 })
                 .option(ChannelOption.SO_KEEPALIVE, true)
@@ -55,7 +53,7 @@ class TCPClient(
             private fun send(channel: Channel) {
                 if (channel.isActive) {
                     println("Send message")
-                    channel.write("Hello World")
+                    channel.writeAndFlush("Hello World")
                 }
             }
         })

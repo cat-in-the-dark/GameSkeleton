@@ -22,9 +22,7 @@ class NettyDecoder(
             }
             val bytes = ByteArray(length)
             buf.readBytes(bytes)
-            val input = Input(bytes)
-            val obj = kryo.readClassAndObject(input)
-            out.add(obj)
+            out.add(kryo.readClassAndObject(Input(bytes)))
         } catch (e: Exception) {
             log.error("Can't decode data.", e)
         }

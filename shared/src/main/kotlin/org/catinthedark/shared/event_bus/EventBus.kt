@@ -8,55 +8,63 @@ import org.reflections.scanners.MethodAnnotationsScanner
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.util.concurrent.locks.ReadWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.withLock
 import kotlin.reflect.KClass
 
 object Events {
     private val addresses: MutableMap<KClass<*>, MutableSet<Info>> = hashMapOf()
+    private val lock: ReadWriteLock = ReentrantReadWriteLock()
 
     object Bus {
         private val log = LoggerFactory.getLogger(this::class.java)
 
         fun send(invoker: Invoker, msg: Any, vararg ctx: Any) {
-            val handlers = addresses[msg::class]
-            if (handlers == null) {
-                log.warn("There is no handler to handle message of the type ${msg::class.java.canonicalName}")
-                return
-            }
-            handlers.forEach {
-                try {
-                    invoker.invoke {
-                        try {
-                            it.method.invoke(it.target, msg, *ctx)
-                        } catch (e: Exception) {
-                            log.error("Can't invoke method ${it.method} for target ${it.target} with $msg and $ctx", e)
+            lock.readLock().withLock {
+                val handlers = addresses[msg::class]
+                if (handlers == null) {
+                    log.warn("There is no handler to handle message of the type ${msg::class.java.canonicalName}")
+                    return
+                }
+                handlers.forEach {
+                    try {
+                        invoker.invoke {
+                            try {
+                                it.method.invoke(it.target, msg, *ctx)
+                            } catch (e: Exception) {
+                                log.error("Can't invoke method ${it.method} for target ${it.target} with $msg and $ctx", e)
+                            }
                         }
+                    } catch (e: Exception) {
+                        log.error("Can't invoke method '${it.method.name}' for target ${it.target} with message $msg and $ctx: ${e.cause?.message}", e)
                     }
-                } catch (e: Exception) {
-                    log.error("Can't invoke method '${it.method.name}' for target ${it.target} with message $msg and $ctx: ${e.cause?.message}", e)
                 }
             }
         }
 
         fun post(invoker: DeferrableInvoker, ms: Long, msg: Any, vararg ctx: Any): List<() -> Unit> {
-            val handlers = addresses[msg::class]
-            if (handlers == null) {
-                log.warn("There is no handler to handle message of the type ${msg::class.java.canonicalName}")
-                return emptyList()
-            }
-            return handlers.map {
-                try {
-                    invoker.defer({
-                        try {
-                            it.method.invoke(it.target, msg, *ctx)
-                        } catch (e: Exception) {
-                            log.error("Can't invoke method ${it.method} for target ${it.target} with $msg and $ctx", e)
-                        }
-                    }, ms)
-                } catch (e: Exception) {
-                    log.error("Can't invoke method '${it.method.name}' for target ${it.target} with message $msg and $ctx: ${e.cause?.message}", e)
+            lock.readLock().withLock {
+                val handlers = addresses[msg::class]
+                if (handlers == null) {
+                    log.warn("There is no handler to handle message of the type ${msg::class.java.canonicalName}")
+                    return emptyList()
                 }
+                return handlers.map {
+                    try {
+                        invoker.defer({
+                            try {
+                                it.method.invoke(it.target, msg, *ctx)
+                            } catch (e: Exception) {
+                                log.error("Can't invoke method ${it.method} for target ${it.target} with $msg and $ctx", e)
+                            }
+                        }, ms)
+                    } catch (e: Exception) {
+                        log.error("Can't invoke method '${it.method.name}' for target ${it.target} with message $msg and $ctx: ${e.cause?.message}", e)
+                    }
 
-                {}
+                    {}
+                }
             }
         }
     }
@@ -69,33 +77,55 @@ object Events {
          * and register them.
          */
         fun register(packageName: String) {
-            Reflections(packageName, MethodAnnotationsScanner())
-                    .getMethodsAnnotatedWith(Handler::class.java)
-                    .filter {
-                        Modifier.isStatic(it.modifiers)
-                    }
-                    .map { extractInfo(it, null) }
-                    .filterNotNull()
-                    .groupBy { it.klass }
-                    .map { g ->
-                        g.value.sorted().forEach {
-                            register(it)
+            lock.writeLock().withLock {
+                Reflections(packageName, MethodAnnotationsScanner())
+                        .getMethodsAnnotatedWith(Handler::class.java)
+                        .filter {
+                            Modifier.isStatic(it.modifiers)
                         }
-                    }
+                        .map { extractInfo(it, null) }
+                        .filterNotNull()
+                        .groupBy { it.klass }
+                        .map { g ->
+                            g.value.sorted().forEach {
+                                register(it)
+                            }
+                        }
+            }
         }
 
         /**
          * Add all annotated methods in this particular class instance
          */
         fun register(target: Any) {
-            getAllMethods(
-                    target::class.java,
-                    withModifier(Modifier.PUBLIC),
-                    withAnnotation(Handler::class.java)
-            ).map {
-                extractInfo(it, target)
-            }.filterNotNull().forEach {
-                register(it)
+            lock.writeLock().withLock {
+                getAllMethods(
+                        target::class.java,
+                        withModifier(Modifier.PUBLIC),
+                        withAnnotation(Handler::class.java)
+                ).map {
+                    extractInfo(it, target)
+                }.filterNotNull().forEach {
+                    register(it)
+                }
+            }
+        }
+
+        /**
+         * Remove all subscribers with this target from the message bus
+         */
+        fun unregister(target: Any?) {
+            lock.writeLock().withLock {
+                addresses.forEach { _, info ->
+                    info.removeIf {
+                        it.target == target
+                    }
+                }
+                addresses.filter {
+                    it.value.isEmpty()
+                }.forEach { key, _ ->
+                    addresses.remove(key)
+                }
             }
         }
 

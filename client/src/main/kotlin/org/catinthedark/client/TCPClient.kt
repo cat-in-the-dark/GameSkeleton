@@ -32,6 +32,7 @@ class TCPClient(
 
                         pipe.addLast("decoder", NettyDecoder(kryo))
                         pipe.addLast("encoder", NettyEncoder(kryo))
+                        pipe.addLast("handler", MessageHandler())
                     }
                 })
                 .option(ChannelOption.SO_KEEPALIVE, true)

@@ -5,18 +5,25 @@ import io.netty.bootstrap.Bootstrap
 import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
+import org.catinthedark.shared.event_bus.Events
+import org.catinthedark.shared.event_bus.Handler
+import org.catinthedark.shared.invokers.Invoker
+import org.catinthedark.shared.invokers.SimpleInvoker
 import org.catinthedark.shared.serialization.NettyDecoder
 import org.catinthedark.shared.serialization.NettyEncoder
 import org.slf4j.LoggerFactory
 
 class TCPClient(
-        private val kryo: Kryo
+        private val kryo: Kryo,
+        private val invoker: Invoker = SimpleInvoker()
 ) {
     private val group = NioEventLoopGroup()
     private val bootstrap = Bootstrap()
     private val log = LoggerFactory.getLogger(this::class.java)
+    private var channel: Channel? = null
 
     init {
+        Events.Registrator.register(this)
         bootstrap.group(group)
                 .channel(NioSocketChannel::class.java)
                 .handler(object : ChannelInitializer<AbstractChannel>() {
@@ -34,30 +41,37 @@ class TCPClient(
         bootstrap.connect(host, port).addListener(object : ChannelFutureListener {
             override fun operationComplete(future: ChannelFuture) {
                 if (future.isSuccess) {
-                    log.info("CONNECTED")
+                    channel = future.channel()
                     addCloseDetectListener(future.channel())
-                    send(future.channel())
+                    Events.Bus.send(invoker, OnConnected())
                 } else {
-                    log.error("FAIL", future.cause())
+                    channel = null
                     future.channel().close()
                     bootstrap.connect(host, port).addListener(this) // reconnect
-                }
-            }
-
-            private fun addCloseDetectListener(channel: Channel) {
-                channel.closeFuture().addListener(object : ChannelFutureListener {
-                    override fun operationComplete(future: ChannelFuture?) {
-                        log.info("DISCONNECT")
-                    }
-                })
-            }
-
-            private fun send(channel: Channel) {
-                if (channel.isActive) {
-                    log.info("Send message")
-                    channel.writeAndFlush("Hello World")
+                    Events.Bus.send(invoker, OnConnectionFailure(future.cause()))
                 }
             }
         })
+    }
+
+    private fun addCloseDetectListener(ch: Channel) {
+        ch.closeFuture().addListener {
+            channel = null
+            Events.Bus.send(invoker, OnDisconnected())
+        }
+    }
+
+    @Handler
+    fun send(msg: Message) {
+        try {
+            if (channel?.isActive == true) {
+                channel?.writeAndFlush(msg.payload)
+            } else {
+                throw Exception("Channel is not active.")
+            }
+        } catch (e: Exception) {
+            log.warn("Can't send TCP message $msg.", e)
+            Events.Bus.send(invoker, OnSendingMessageError(e, msg))
+        }
     }
 }

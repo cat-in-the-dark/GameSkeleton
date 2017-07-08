@@ -3,12 +3,14 @@ package org.catinthedark.example
 import com.esotericsoftware.kryo.Kryo
 import org.catinthedark.client.TCPClient
 import org.catinthedark.server.TCPServer
+import org.catinthedark.shared.event_bus.Events
 
 class Main {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
             val kryo = Kryo()
+            Events.Registrator.register("org.catinthedark.example.handlers2")
 
             Thread {
                 tcpServer(kryo)

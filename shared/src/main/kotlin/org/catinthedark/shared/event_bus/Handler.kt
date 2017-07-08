@@ -1,4 +1,4 @@
-package org.catinthedark.shared
+package org.catinthedark.shared.event_bus
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)

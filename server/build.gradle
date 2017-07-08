@@ -29,8 +29,6 @@ dependencies {
     compile 'io.netty:netty-handler:4.1.6.Final'
     compile 'org.slf4j:slf4j-api:1.7.21'
 
-    compile 'org.reflections:reflections:0.9.11'
-
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     testCompile 'junit:junit:4.12'
 }

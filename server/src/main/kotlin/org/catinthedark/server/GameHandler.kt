@@ -2,12 +2,15 @@ package org.catinthedark.server
 
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import org.slf4j.LoggerFactory
+import org.catinthedark.shared.event_bus.Events
+import org.catinthedark.shared.invokers.Invoker
+import org.catinthedark.shared.invokers.SimpleInvoker
 
 class GameHandler : SimpleChannelInboundHandler<Any>() {
-    private val log = LoggerFactory.getLogger(this::class.java)
+    private val invoker: Invoker = SimpleInvoker()
 
     override fun channelRead0(ctx: ChannelHandlerContext?, msg: Any?) {
-        log.info("Received $msg")
+        if (msg == null) return
+        Events.Bus.send(invoker, msg)
     }
 }

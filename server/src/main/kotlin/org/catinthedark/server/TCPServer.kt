@@ -9,6 +9,9 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
+import org.catinthedark.shared.event_bus.Events
+import org.catinthedark.shared.invokers.Invoker
+import org.catinthedark.shared.invokers.SimpleInvoker
 import org.catinthedark.shared.serialization.NettyDecoder
 import org.catinthedark.shared.serialization.NettyEncoder
 import org.slf4j.LoggerFactory
@@ -18,6 +21,7 @@ class TCPServer(
 ) {
     private val PORT = 8080
     private val log = LoggerFactory.getLogger(this::class.java)
+    private val invoker: Invoker = SimpleInvoker()
 
     fun run() {
         val bossGroup = NioEventLoopGroup(1)
@@ -37,14 +41,20 @@ class TCPServer(
                         }
                     })
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childOption(ChannelOption.SO_REUSEADDR, true)
+                    .childOption(ChannelOption.TCP_NODELAY, true)
 
-            val f = b.bind(PORT).sync()
 
-            log.info("TCP sever is up on port $PORT")
+            val f = b.bind(PORT).addListener {
+                log.info("TCP sever is up on port $PORT")
+                Events.Bus.send(invoker, ServerStarted())
+            }.sync()
+
             f.channel().closeFuture().sync()
         } finally {
             workerGroup.shutdownGracefully()
             bossGroup.shutdownGracefully()
+            Events.Bus.send(invoker, ServerStopped())
         }
     }
 }

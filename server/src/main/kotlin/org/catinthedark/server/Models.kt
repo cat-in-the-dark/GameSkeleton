@@ -17,3 +17,6 @@ data class TCPMessage(
         val payload: Any,
         val to: String? = null // NULL means send to all
 )
+
+class ServerStarted
+class ServerStopped

@@ -12,11 +12,13 @@ import io.netty.handler.logging.LoggingHandler
 import org.catinthedark.shared.serialization.NettyDecoder
 import org.catinthedark.shared.serialization.NettyEncoder
 import org.slf4j.LoggerFactory
+import java.net.InetSocketAddress
 
 class TCPServer(
-        private val kryo: Kryo
+        private val kryo: Kryo,
+        val host: String = "0.0.0.0",
+        val port: Int = 8080
 ) {
-    private val PORT = 8080
     private val log = LoggerFactory.getLogger(this::class.java)
 
     fun run() {
@@ -38,9 +40,10 @@ class TCPServer(
                     })
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
 
-            val f = b.bind(PORT).sync()
+            val addr = InetSocketAddress(host, port)
+            val f = b.bind(addr).sync()
 
-            log.info("TCP sever is up on port $PORT")
+            log.info("TCP sever is up on $addr")
             f.channel().closeFuture().sync()
         } finally {
             workerGroup.shutdownGracefully()

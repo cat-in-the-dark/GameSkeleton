@@ -1,9 +1,7 @@
 package org.catinthedark.example.handlers2
 
-import org.catinthedark.client.Message
 import org.catinthedark.server.OnClientConnected
-import org.catinthedark.server.TCPMessage
-import org.catinthedark.shared.event_bus.Events
+import org.catinthedark.shared.event_bus.EventBus
 import org.catinthedark.shared.event_bus.Handler
 import org.slf4j.LoggerFactory
 
@@ -15,13 +13,13 @@ data class ServerMessage(val data: String = "")
 @Handler
 fun onMessageFromClient(ev: ClientMessage) {
     log.info("onMessageFromClient $ev")
-    Events.Bus.post(invoker, 1000, TCPMessage(ServerMessage("Hello client! I'm server.")))
+    EventBus.post("onMessageFromClient", invoker, 1000, org.catinthedark.server.TCPMessage(ServerMessage("TCP: Hello client! I'm server.")))
 }
 
 @Handler
 fun onMessageFromServer(ev: ServerMessage) {
     log.info("onMessageFromServer: $ev")
-    Events.Bus.post(invoker, 1000, Message(ClientMessage("Hello server! I'm client!")))
+    EventBus.post("onMessageFromServer", invoker, 1000, org.catinthedark.client.TCPMessage(ClientMessage("TCP: Hello server! I'm client!")))
 }
 
 @Handler

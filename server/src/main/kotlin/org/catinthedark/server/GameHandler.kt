@@ -3,7 +3,8 @@ package org.catinthedark.server
 import io.netty.channel.Channel
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
-import org.catinthedark.shared.event_bus.Events
+import org.catinthedark.shared.event_bus.BusRegister
+import org.catinthedark.shared.event_bus.EventBus
 import org.catinthedark.shared.event_bus.Handler
 import org.catinthedark.shared.invokers.Invoker
 import org.catinthedark.shared.invokers.SimpleInvoker
@@ -16,23 +17,23 @@ class GameHandler : SimpleChannelInboundHandler<Any>() {
 
     override fun handlerAdded(ctx: ChannelHandlerContext?) {
         super.handlerAdded(ctx)
-        Events.Registrator.register(this)
+        BusRegister.register(this)
     }
 
     override fun handlerRemoved(ctx: ChannelHandlerContext?) {
         super.handlerRemoved(ctx)
-        Events.Registrator.unregister(this)
+        BusRegister.unregister(this)
     }
 
     override fun channelRead0(ctx: ChannelHandlerContext?, msg: Any?) {
         if (msg == null) return
-        Events.Bus.send(invoker, msg)
+        EventBus.send("GameHandler#channelRead0", invoker, msg)
     }
 
     override fun channelRegistered(ctx: ChannelHandlerContext) {
         val id = ctx.channel().id().asLongText()
         channels.putIfAbsent(id, ctx.channel())
-        Events.Bus.send(invoker, OnClientConnected(
+        EventBus.send("GameHandler#channelRegistered", invoker, OnClientConnected(
                 ctx.channel().remoteAddress(),
                 id
         ))
@@ -42,7 +43,7 @@ class GameHandler : SimpleChannelInboundHandler<Any>() {
     override fun channelUnregistered(ctx: ChannelHandlerContext) {
         val id = ctx.channel().id().asLongText()
         channels.remove(id)
-        Events.Bus.send(invoker, OnClientDisconnected(
+        EventBus.send("GameHandler#channelUnregistered", invoker, OnClientDisconnected(
                 ctx.channel().remoteAddress(),
                 id
         ))
@@ -53,7 +54,7 @@ class GameHandler : SimpleChannelInboundHandler<Any>() {
     fun send(msg: TCPMessage) {
         if (msg.to == null) {
             // will send to all
-            channels.forEach { to, ch ->
+            channels.forEach { _, ch ->
                 send(msg, ch)
             }
         } else {

@@ -9,17 +9,19 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
-import org.catinthedark.shared.event_bus.Events
+import org.catinthedark.shared.event_bus.EventBus
 import org.catinthedark.shared.invokers.Invoker
 import org.catinthedark.shared.invokers.SimpleInvoker
 import org.catinthedark.shared.serialization.NettyDecoder
 import org.catinthedark.shared.serialization.NettyEncoder
 import org.slf4j.LoggerFactory
+import java.net.InetSocketAddress
 
 class TCPServer(
-        private val kryo: Kryo
+        private val kryo: Kryo,
+        val host: String = "0.0.0.0",
+        val port: Int = 8080
 ) {
-    private val PORT = 8080
     private val log = LoggerFactory.getLogger(this::class.java)
     private val invoker: Invoker = SimpleInvoker()
 
@@ -45,16 +47,17 @@ class TCPServer(
                     .childOption(ChannelOption.TCP_NODELAY, true)
 
 
-            val f = b.bind(PORT).addListener {
-                log.info("TCP sever is up on port $PORT")
-                Events.Bus.send(invoker, ServerStarted())
+            val addr = InetSocketAddress(host, port)
+            val f = b.bind(addr).addListener {
+                log.info("TCP sever is up on $addr")
+                EventBus.send("TCPServer#run", invoker, ServerStarted())
             }.sync()
 
             f.channel().closeFuture().sync()
         } finally {
             workerGroup.shutdownGracefully()
             bossGroup.shutdownGracefully()
-            Events.Bus.send(invoker, ServerStopped())
+            EventBus.send("TCPServer#run", invoker, ServerStopped())
         }
     }
 }

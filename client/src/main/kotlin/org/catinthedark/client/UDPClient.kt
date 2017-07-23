@@ -4,7 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.socket.nio.NioSocketChannel
+import io.netty.channel.socket.nio.NioDatagramChannel
 import org.catinthedark.shared.event_bus.BusRegister
 import org.catinthedark.shared.event_bus.EventBus
 import org.catinthedark.shared.event_bus.Handler
@@ -14,11 +14,11 @@ import org.catinthedark.shared.serialization.NettyDecoder
 import org.catinthedark.shared.serialization.NettyEncoder
 import org.slf4j.LoggerFactory
 
-class TCPClient(
+class UDPClient(
         private val kryo: Kryo,
         private val invoker: Invoker = SimpleInvoker()
 ) {
-    private val group = NioEventLoopGroup()
+    private val group = NioEventLoopGroup(1)
     private val bootstrap = Bootstrap()
     private val log = LoggerFactory.getLogger(this::class.java)
     private var channel: Channel? = null
@@ -26,7 +26,7 @@ class TCPClient(
     init {
         BusRegister.register(this)
         bootstrap.group(group)
-                .channel(NioSocketChannel::class.java)
+                .channel(NioDatagramChannel::class.java)
                 .handler(object : ChannelInitializer<AbstractChannel>() {
                     override fun initChannel(ch: AbstractChannel) {
                         val pipe = ch.pipeline()
@@ -36,7 +36,6 @@ class TCPClient(
                         pipe.addLast("handler", MessageHandler())
                     }
                 })
-                .option(ChannelOption.SO_KEEPALIVE, true)
     }
 
     fun connect(host: String, port: Int) {
@@ -45,12 +44,12 @@ class TCPClient(
                 if (future.isSuccess) {
                     channel = future.channel()
                     addCloseDetectListener(future.channel())
-                    EventBus.send("TCPClient#connect", invoker, OnConnected())
+                    EventBus.send("UDPClient#connect", invoker, OnConnected())
                 } else {
                     channel = null
                     future.channel().close()
                     bootstrap.connect(host, port).addListener(this) // reconnect
-                    EventBus.send("TCPClient#connect", invoker, OnConnectionFailure(future.cause()))
+                    EventBus.send("UDPClient#connect", invoker, OnConnectionFailure(future.cause()))
                 }
             }
         })
@@ -59,12 +58,12 @@ class TCPClient(
     private fun addCloseDetectListener(ch: Channel) {
         ch.closeFuture().addListener {
             channel = null
-            EventBus.send("TCPClient#addCloseDetectListener", invoker, OnDisconnected())
+            EventBus.send("UDPClient#addCloseDetectListener", invoker, OnDisconnected())
         }
     }
 
     @Handler
-    fun send(msg: TCPMessage) {
+    fun send(msg: UDPMessage) {
         try {
             if (channel?.isActive == true) {
                 channel?.writeAndFlush(msg.payload)
@@ -73,7 +72,7 @@ class TCPClient(
             }
         } catch (e: Exception) {
             log.warn("Can't send TCP message $msg.", e)
-            EventBus.send("TCPClient#send", invoker, OnSendingTCPMessageError(e, msg))
+            EventBus.send("UDPClient#send", invoker, OnSendingUDPMessageError(e, msg))
         }
     }
 }

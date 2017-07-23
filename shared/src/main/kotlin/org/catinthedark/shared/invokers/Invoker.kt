@@ -6,6 +6,6 @@ interface Invoker {
 }
 
 interface DeferrableInvoker : Invoker {
-    fun defer(func: () -> Unit, ms: Long): () -> Unit
-    fun periodic(func: () -> Unit, ms: Long): () -> Unit
+    fun defer(func: () -> Unit, timeout: Long): () -> Unit
+    fun periodic(func: () -> Unit, timeout: Long): () -> Unit
 }

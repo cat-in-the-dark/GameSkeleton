@@ -12,26 +12,26 @@ class AsyncInvoker : DeferrableInvoker {
         executor.submit(func)
     }
 
-    override fun defer(func: () -> Unit, ms: Long): () -> Unit {
-        val f = executor.schedule(func, ms, TimeUnit.MILLISECONDS)
+    override fun defer(func: () -> Unit, timeout: Long): () -> Unit {
+        val f = executor.schedule(func, timeout, TimeUnit.MILLISECONDS)
 
         return {
             try {
                 f.cancel(true)
             } catch (e: Exception) {
-                log.error("Can't stop defer action of period $ms: ${e.message}", e)
+                log.error("Can't stop defer action of period $timeout: ${e.message}", e)
             }
         }
     }
 
-    override fun periodic(func: () -> Unit, ms: Long): () -> Unit {
-        val f = executor.scheduleWithFixedDelay(func, ms, ms, TimeUnit.MILLISECONDS)
+    override fun periodic(func: () -> Unit, timeout: Long): () -> Unit {
+        val f = executor.scheduleWithFixedDelay(func, timeout, timeout, TimeUnit.MILLISECONDS)
 
         return {
             try {
                 f.cancel(true)
             } catch (e: Exception) {
-                log.error("Can't stop periodic action of period $ms: ${e.message}", e)
+                log.error("Can't stop periodic action of period $timeout: ${e.message}", e)
             }
         }
     }

@@ -2,9 +2,10 @@ package org.catinthedark.shared.invokers
 
 /**
  * This kind of invoker runs in a single thread but do not use some schedulers.
- * Instead, it receives time ticks and handle the timeouts, defers and so on.
+ * Instead, it receives time ticks and handleы the timeouts, defers and so on.
  * It should be used in UI systems, because this kind of systems always
- * have it's own inner eventloop. It would be better to reuse loop instead of threading.
+ * have it's own inner eventloop.
+ * It would be better to reuse loop instead of threading.
  *
  * WARNING!
  * This invoker is not thread safe!!!
@@ -16,8 +17,8 @@ class TickInvoker : DeferrableInvoker {
 
     /**
      * Call this method in the event loop on every loop.
-     * Receives [delta] in ms to calculate system time units for timed events.
-     * This call invoke all queued events that must be run at this time.
+     * Receives [delta] in ms, for example, to calculate system time for timed events.
+     * This call invokes all queued funcs that must be run at this time.
      */
     fun run(delta: Long) {
         time += delta
@@ -41,8 +42,8 @@ class TickInvoker : DeferrableInvoker {
     }
 
     /**
-     * Put an [func] to the queue which will be called on next [run] call.
-     * Invoke will never call the event at the moment of time when #invoke is called.
+     * Puts an [func] to the queue which will be called on next [run] call.
+     * [invoke] will never call the event at the moment of time when it is called.
      * Literally say, [invoke] is the synonym for [defer] with ZERO delay.
      */
     override fun invoke(func: () -> Unit) {
@@ -51,7 +52,7 @@ class TickInvoker : DeferrableInvoker {
 
 
     /**
-     * Cancel all funcs in the [queue] and reset the [time].
+     * Cancels all funcs in the [queue] and reset the [time].
      */
     override fun shutdown() {
         queue.clear()
@@ -59,8 +60,8 @@ class TickInvoker : DeferrableInvoker {
     }
 
     /**
-     * Put an [func] to queue that will be called after timeout in ms.
-     * Event will be never called earlier then currentTime+timeout,
+     * Puts an [func] to queue that will be called after timeout in ms.
+     * Event will be never called earlier then [time]+[timeout],
      * but might be called later.
      *
      * You can cancel the event before it'll be called by invoking the callback

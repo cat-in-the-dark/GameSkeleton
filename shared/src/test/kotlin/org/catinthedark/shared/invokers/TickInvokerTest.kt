@@ -35,6 +35,21 @@ class TickInvokerTest {
     }
 
     @Test
+    fun Should_NotFailOnCancelingInvokedTask() {
+        val invoker = TickInvoker()
+        var accum = 0
+        val cancel = invoker.defer ({
+            accum += 1
+        }, 2)
+        Assert.assertEquals(0, accum)
+        invoker.run(2)
+        Assert.assertEquals(1, accum)
+        cancel()
+        invoker.run(2)
+        Assert.assertEquals(1, accum)
+    }
+
+    @Test
     fun Should_CancelDefer() {
         val invoker = TickInvoker()
         var accum = 0

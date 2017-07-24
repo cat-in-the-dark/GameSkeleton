@@ -1,5 +1,10 @@
 package org.catinthedark.shared.invokers
 
+import org.slf4j.LoggerFactory
+import java.util.concurrent.locks.ReadWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.withLock
+
 /**
  * This kind of invoker runs in a single thread but do not use some schedulers.
  * Instead, it receives time ticks and handleы the timeouts, defers and so on.
@@ -7,13 +12,14 @@ package org.catinthedark.shared.invokers
  * have it's own inner eventloop.
  * It would be better to reuse loop instead of threading.
  *
- * WARNING!
- * This invoker is not thread safe!!!
- * Use it only in a single thread!
+ * This invoker is thread safe.
+ * So you can put events from any thread.
  */
 class TickInvoker : DeferrableInvoker {
+    private val log = LoggerFactory.getLogger(this::class.java)
     private var time: Long = 0L
     private val queue: MutableList<Holder> = mutableListOf()
+    private val lock: ReadWriteLock = ReentrantReadWriteLock()
 
     /**
      * Call this method in the event loop on every loop.
@@ -22,6 +28,17 @@ class TickInvoker : DeferrableInvoker {
      */
     fun run(delta: Long) {
         time += delta
+
+        lock.writeLock().withLock {
+            processDefer()
+        }
+        // break big lock into two small, like unlock eventloop
+        lock.writeLock().withLock {
+            processPeriodic()
+        }
+    }
+
+    private fun processDefer() {
         queue.filterNot {
             it.isPeriodic
         }.filter {
@@ -30,7 +47,9 @@ class TickInvoker : DeferrableInvoker {
             forEach { it.func() }
             queue.removeAll(this)
         }
+    }
 
+    private fun processPeriodic() {
         queue.filter {
             it.isPeriodic
         }.filter {
@@ -47,7 +66,9 @@ class TickInvoker : DeferrableInvoker {
      * Literally say, [invoke] is the synonym for [defer] with ZERO delay.
      */
     override fun invoke(func: () -> Unit) {
-        queue.add(Holder(0L, func, false))
+        lock.writeLock().withLock {
+            queue.add(Holder(0L, func, false))
+        }
     }
 
 
@@ -55,8 +76,10 @@ class TickInvoker : DeferrableInvoker {
      * Cancels all funcs in the [queue] and reset the [time].
      */
     override fun shutdown() {
-        queue.clear()
-        time = 0L
+        lock.writeLock().withLock {
+            queue.clear()
+            time = 0L
+        }
     }
 
     /**
@@ -67,10 +90,10 @@ class TickInvoker : DeferrableInvoker {
      * You can cancel the event before it'll be called by invoking the callback
      */
     override fun defer(func: () -> Unit, timeout: Long): () -> Unit {
-        with(Holder(timeout, func, false)) {
-            queue.add(this)
-            return {
-                queue.remove(this)
+        lock.writeLock().withLock {
+            with(Holder(timeout, func, false)) {
+                queue.add(this)
+                return cancelBuilder(this)
             }
         }
     }
@@ -82,10 +105,18 @@ class TickInvoker : DeferrableInvoker {
      * You can cancel the [func] by invoking the returned callback.
      */
     override fun periodic(func: () -> Unit, timeout: Long): () -> Unit {
-        with(Holder(timeout, func, true)) {
-            queue.add(this)
-            return {
-                queue.remove(this)
+        lock.writeLock().withLock {
+            with(Holder(timeout, func, true)) {
+                queue.add(this)
+                return cancelBuilder(this)
+            }
+        }
+    }
+
+    private fun cancelBuilder(holder: Holder): () -> Unit {
+        return {
+            if (!queue.remove(holder)) {
+                log.warn("Can't cancel call $holder because it has been already invoked.")
             }
         }
     }
@@ -98,5 +129,11 @@ class TickInvoker : DeferrableInvoker {
             nextCallTime += timeout
             return this
         }
+
+        override fun toString(): String {
+            return "Holder(timeout=$timeout, isPeriodic=$isPeriodic, nextCallTime=$nextCallTime, currentTime=$time)"
+        }
+
+
     }
 }

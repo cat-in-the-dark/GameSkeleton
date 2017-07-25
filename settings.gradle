@@ -3,4 +3,5 @@ rootProject.name = 'base-server'
 include 'server', 'example'
 include 'client'
 include 'shared'
+include 'libgdx'
 

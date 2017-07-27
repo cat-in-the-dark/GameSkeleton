@@ -17,6 +17,10 @@ import kotlin.reflect.KClass
  * Hidden holder of all the inner data that shared between {@see EventBus} and @{@see BusRegister}
  */
 private object BusHolder {
+    /**
+     * The key is a Class of a message.
+     * The value is a Set of receivers subscribed on this key Class.
+     */
     val addresses: MutableMap<KClass<*>, MutableSet<Info>> = hashMapOf()
     val lock: ReadWriteLock = ReentrantReadWriteLock()
 
@@ -39,47 +43,57 @@ private object BusHolder {
 object EventBus {
     private val log = LoggerFactory.getLogger(this::class.java)
 
-    fun send(from: String="Events#send", invoker: Invoker, msg: Any, vararg ctx: Any) {
+    /**
+     * Send the [message] to some receivers which are defined in the [BusHolder.addresses].
+     * Some extras could be passed as [ctx] - a list of objects.
+     * The addressing system relies on the [message] type.
+     * The [message] will be handled by some handlers with a strategy provided by the [invoker].
+     */
+    fun send(from: String = "Events#send", invoker: Invoker, message: Any, vararg ctx: Any) {
         BusHolder.lock.readLock().withLock {
-            val handlers = BusHolder.addresses[msg::class]
+            val handlers = BusHolder.addresses[message::class]
             if (handlers == null) {
-                log.warn("$from: There is no handler to handle message of the type ${msg::class.java.canonicalName}")
+                log.warn("$from: There is no handler to handle message of the type ${message::class.java.canonicalName}")
                 return
             }
             handlers.forEach {
                 try {
                     invoker.invoke {
                         try {
-                            it.method.invoke(it.target, msg, *ctx)
+                            it.method.invoke(it.target, message, *ctx)
                         } catch (e: Exception) {
-                            log.error("$from: Can't invoke method ${it.method} for target ${it.target} with $msg and $ctx", e)
+                            log.error("$from: Can't invoke method ${it.method} for target ${it.target} with $message and $ctx", e)
                         }
                     }
                 } catch (e: Exception) {
-                    log.error("$from: Can't invoke method '${it.method.name}' for target ${it.target} with message $msg and $ctx: ${e.cause?.message}", e)
+                    log.error("$from: Can't invoke method '${it.method.name}' for target ${it.target} with message $message and $ctx: ${e.cause?.message}", e)
                 }
             }
         }
     }
 
-    fun post(from: String = "Events#post", invoker: DeferrableInvoker, ms: Long, msg: Any, vararg ctx: Any): List<() -> Unit> {
+    /**
+     * The same as [send] method, but send the [message] in the future
+     * with the [timeout] in time units, that supports by the [invoker].
+     */
+    fun post(from: String = "Events#post", invoker: DeferrableInvoker, timeout: Long, message: Any, vararg ctx: Any): List<() -> Unit> {
         BusHolder.lock.readLock().withLock {
-            val handlers = BusHolder.addresses[msg::class]
+            val handlers = BusHolder.addresses[message::class]
             if (handlers == null) {
-                log.warn("$from: There is no handler to handle message of the type ${msg::class.java.canonicalName}")
+                log.warn("$from: There is no handler to handle message of the type ${message::class.java.canonicalName}")
                 return emptyList()
             }
             return handlers.map {
                 try {
                     invoker.defer({
                         try {
-                            it.method.invoke(it.target, msg, *ctx)
+                            it.method.invoke(it.target, message, *ctx)
                         } catch (e: Exception) {
-                            log.error("$from: Can't invoke method ${it.method} for target ${it.target} with $msg and $ctx", e)
+                            log.error("$from: Can't invoke method ${it.method} for target ${it.target} with $message and $ctx", e)
                         }
-                    }, ms)
+                    }, timeout)
                 } catch (e: Exception) {
-                    log.error("$from: Can't invoke method '${it.method.name}' for target ${it.target} with message $msg and $ctx: ${e.cause?.message}", e)
+                    log.error("$from: Can't invoke method '${it.method.name}' for target ${it.target} with message $message and $ctx: ${e.cause?.message}", e)
                 }
 
                 {}

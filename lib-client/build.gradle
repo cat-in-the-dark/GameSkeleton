@@ -1,0 +1,7 @@
+dependencies {
+    compile project(':lib-shared')
+    compile 'io.netty:netty-all:4.1.6.Final'
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}

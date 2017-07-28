@@ -1,7 +1,10 @@
 rootProject.name = 'base-server'
 
-include 'server', 'example'
-include 'client'
-include 'shared'
-include 'libgdx'
+include ':lib-server'
+include ':lib-client'
+include ':lib-shared'
+include ':lib-libgdx'
+include ':example-server'
+include ':example-client'
+include ':example-shared'
 

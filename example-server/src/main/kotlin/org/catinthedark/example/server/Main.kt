@@ -9,11 +9,10 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
             BusRegister.register("org.catinthedark.example.server.handlers")
-            BusRegister.registerPreHandler("addContext", {target, message, ctx ->
+            BusRegister.registerPreHandler("addContext", {_, message, ctx ->
                 val id = ctx.getOrNull(0) ?: return@registerPreHandler Pair(message, ctx)
                 when(id) {
-                    is String -> Pair(message, ctx + listOf(lobby))
-                    is Room -> Pair(message, ctx)
+                    is String -> Pair(message, listOf(lobby))
                     else -> Pair(message, ctx)
                 }
             })

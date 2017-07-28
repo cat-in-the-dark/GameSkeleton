@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger("onStartGame")
 
-@Handler
+@Handler(preHandlerPath = "addContext")
 fun onStartGame(ev: OnGameStart, room: Room) {
     log.info("$ev $room")
 }

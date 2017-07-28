@@ -63,12 +63,16 @@ object EventBus {
             handlers.forEach {
                 try {
                     invoker.invoke {
+                        var newCtx: List<Any> = emptyList()
                         try {
                             val preHandler = BusHolder.preHandlers.getOrDefault(it.annotation.preHandlerPath, defaultPreHandler)
-                            val (msg, newCtx) = preHandler(it.target, message, ctx.asList())
+                            val (msg, c) = preHandler(it.target, message, ctx.asList())
+                            newCtx = c
                             it.method.invoke(it.target, msg, *newCtx.toTypedArray())
                         } catch (e: Exception) {
-                            log.error("$from: Can't invoke method ${it.method} for target ${it.target} with $message and $ctx", e)
+                            val expectedTypes = it.method.parameterTypes.map { it.canonicalName }
+                            val gotTypes = newCtx.map { it.javaClass.canonicalName }
+                            log.error("$from: Can't invoke method ${it.method} for target ${it.target} with $message and $newCtx.\nExpected types:\t$expectedTypes.\nGot types:\t$gotTypes", e)
                         }
                     }
                 } catch (e: Exception) {

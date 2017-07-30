@@ -18,9 +18,9 @@ object AnimationUtils {
      * @param frameIndexes is an collection of indexes for images in the [frames] to be used in animation.
      */
     fun loopingAnimation(
-            speed: Float,
-            frames: Array<Array<TextureRegion>>,
-            vararg frameIndexes: Pair<Int, Int>
+        speed: Float,
+        frames: Array<Array<TextureRegion>>,
+        vararg frameIndexes: Pair<Int, Int>
     ): Animation<TextureRegion> {
         val array = com.badlogic.gdx.utils.Array<TextureRegion>()
         frameIndexes.forEach {

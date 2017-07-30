@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
 
 class TCPServer(
-        private val kryo: Kryo,
-        private val host: String = "0.0.0.0",
-        private val port: Int = 8080,
-        private val invoker: Invoker
+    private val kryo: Kryo,
+    private val host: String = "0.0.0.0",
+    private val port: Int = 8080,
+    private val invoker: Invoker
 ) {
     private val log = LoggerFactory.getLogger(this::class.java)
     private val channels: MutableMap<String, Channel> = hashMapOf()
@@ -35,20 +35,20 @@ class TCPServer(
         try {
             val b = ServerBootstrap()
             b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel::class.java)
-                    .handler(LoggingHandler(LogLevel.INFO))
-                    .childHandler(object : ChannelInitializer<AbstractChannel>() {
-                        override fun initChannel(ch: AbstractChannel) {
-                            val pipe = ch.pipeline()
+                .channel(NioServerSocketChannel::class.java)
+                .handler(LoggingHandler(LogLevel.INFO))
+                .childHandler(object : ChannelInitializer<AbstractChannel>() {
+                    override fun initChannel(ch: AbstractChannel) {
+                        val pipe = ch.pipeline()
 
-                            pipe.addLast("decoder", NettyDecoder(kryo))
-                            pipe.addLast("encoder", NettyEncoder(kryo))
-                            pipe.addLast("handler", GameHandler(invoker, channels))
-                        }
-                    })
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childOption(ChannelOption.SO_REUSEADDR, true)
-                    .childOption(ChannelOption.TCP_NODELAY, true)
+                        pipe.addLast("decoder", NettyDecoder(kryo))
+                        pipe.addLast("encoder", NettyEncoder(kryo))
+                        pipe.addLast("handler", GameHandler(invoker, channels))
+                    }
+                })
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.SO_REUSEADDR, true)
+                .childOption(ChannelOption.TCP_NODELAY, true)
 
 
             val addr = InetSocketAddress(host, port)

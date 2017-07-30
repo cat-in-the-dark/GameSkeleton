@@ -29,8 +29,8 @@ class EventBusTest {
         BusRegister.registerPreHandler("/", { _, message, _ ->
             Pair(message, listOf("EXTRAS"))
         })
-        EventBus.send("EventBusTest#Shoudl_Send", invoker,"Hello")
-        EventBus.send("EventBusTest#Shoudl_Send", invoker,1)
+        EventBus.send("EventBusTest#Shoudl_Send", invoker, "Hello")
+        EventBus.send("EventBusTest#Shoudl_Send", invoker, 1)
         Assert.assertEquals(2, called)
     }
 }

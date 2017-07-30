@@ -16,7 +16,7 @@ private val log = LoggerFactory.getLogger("connectionHandlers")
 fun onConnected(ev: OnConnected) {
     log.info("Connected: $ev")
     EventBus.send("connectionHandlers#onConnected", invoker,
-            TCPMessage(OnGameStart("Hello world!"))
+        TCPMessage(OnGameStart("Hello world!"))
     )
 }
 

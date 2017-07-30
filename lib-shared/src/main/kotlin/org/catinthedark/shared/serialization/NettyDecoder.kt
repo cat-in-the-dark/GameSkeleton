@@ -8,7 +8,7 @@ import io.netty.handler.codec.ByteToMessageDecoder
 import org.slf4j.LoggerFactory
 
 class NettyDecoder(
-        private val kryo: Kryo
+    private val kryo: Kryo
 ) : ByteToMessageDecoder() {
     private val log = LoggerFactory.getLogger(this::class.java)
 

@@ -3,7 +3,6 @@ package org.catinthedark.shared.serialization
 import com.esotericsoftware.kryo.Kryo
 import org.reflections.Reflections
 import org.slf4j.LoggerFactory
-import java.io.Serializable
 import kotlin.reflect.KClass
 
 object KryoCustomizer {

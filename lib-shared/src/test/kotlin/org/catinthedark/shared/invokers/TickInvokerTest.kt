@@ -22,7 +22,7 @@ class TickInvokerTest {
     fun Should_InvokeDefer() {
         val invoker = TickInvoker()
         var accum = 0
-        invoker.defer ({
+        invoker.defer({
             accum += 1
         }, 2)
         Assert.assertEquals(0, accum)
@@ -38,7 +38,7 @@ class TickInvokerTest {
     fun Should_NotFailOnCancelingInvokedTask() {
         val invoker = TickInvoker()
         var accum = 0
-        val cancel = invoker.defer ({
+        val cancel = invoker.defer({
             accum += 1
         }, 2)
         Assert.assertEquals(0, accum)
@@ -53,7 +53,7 @@ class TickInvokerTest {
     fun Should_CancelDefer() {
         val invoker = TickInvoker()
         var accum = 0
-        val defer = invoker.defer ({
+        val defer = invoker.defer({
             accum += 1
         }, 2)
         Assert.assertEquals(0, accum)
@@ -70,7 +70,7 @@ class TickInvokerTest {
     fun Should_InvokePeriodic() {
         val invoker = TickInvoker()
         var accum = 0
-        invoker.periodic ({
+        invoker.periodic({
             accum += 1
         }, 2)
         Assert.assertEquals(0, accum)
@@ -92,7 +92,7 @@ class TickInvokerTest {
     fun Should_CancelPeriodic() {
         val invoker = TickInvoker()
         var accum = 0
-        val periodic = invoker.periodic ({
+        val periodic = invoker.periodic({
             accum += 1
         }, 1)
         Assert.assertEquals(0, accum)

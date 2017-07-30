@@ -8,7 +8,7 @@ import io.netty.handler.codec.MessageToByteEncoder
 import org.slf4j.LoggerFactory
 
 class NettyEncoder(
-        private val kryo: Kryo
+    private val kryo: Kryo
 ) : MessageToByteEncoder<Any>() {
     private val log = LoggerFactory.getLogger(this::class.java)
     private val output = Output(4 * 1024, 16 * 1024)

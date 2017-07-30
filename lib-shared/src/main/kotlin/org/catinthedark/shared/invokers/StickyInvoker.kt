@@ -1,6 +1,6 @@
 package org.catinthedark.shared.invokers
 
-class StickyInvoker: Invoker {
+class StickyInvoker : Invoker {
     override fun shutdown() {
         // Nothing to do
     }

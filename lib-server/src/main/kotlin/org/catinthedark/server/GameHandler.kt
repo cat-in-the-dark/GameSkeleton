@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory
  * You can send a message to other clients by sending [TCPMessage] via [EventBus]
  */
 class GameHandler(
-        private val invoker: Invoker,
-        private val channels: MutableMap<String, Channel>
+    private val invoker: Invoker,
+    private val channels: MutableMap<String, Channel>
 ) : SimpleChannelInboundHandler<Any>() {
     private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -39,8 +39,8 @@ class GameHandler(
         val id = ctx.channel().id().asLongText()
         channels.put(id, ctx.channel())
         EventBus.send("GameHandler#channelRegistered", invoker, OnClientConnected(
-                ctx.channel().remoteAddress(),
-                id
+            ctx.channel().remoteAddress(),
+            id
         ))
         super.channelRegistered(ctx)
     }
@@ -48,8 +48,8 @@ class GameHandler(
     override fun channelUnregistered(ctx: ChannelHandlerContext) {
         val id = ctx.channel().id().asLongText()
         EventBus.send("GameHandler#channelUnregistered", invoker, OnClientDisconnected(
-                ctx.channel().remoteAddress(),
-                id
+            ctx.channel().remoteAddress(),
+            id
         ))
         channels.remove(id)
         super.channelUnregistered(ctx)

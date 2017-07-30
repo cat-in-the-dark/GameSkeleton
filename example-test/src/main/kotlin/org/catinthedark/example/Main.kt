@@ -17,8 +17,8 @@ class Main {
         fun main(args: Array<String>) {
             val kryo = Kryo().apply {
                 KryoCustomizer.register(this,
-                        ClientMessage::class,
-                        ServerMessage::class
+                    ClientMessage::class,
+                    ServerMessage::class
                 )
             }
             BusRegister.register("org.catinthedark.example.handlers2")
@@ -41,13 +41,13 @@ class Main {
         }
 
         fun tcpServer(kryo: Kryo) {
-            val server = TCPServer(kryo,"0.0.0.0", 8080)
+            val server = TCPServer(kryo, "0.0.0.0", 8080)
 
             server.run()
         }
 
         fun udpServer(kryo: Kryo) {
-            val server = UDPServer(kryo,"0.0.0.0", 8081)
+            val server = UDPServer(kryo, "0.0.0.0", 8081)
 
             server.run()
         }

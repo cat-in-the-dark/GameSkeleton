@@ -65,7 +65,7 @@ class ImmutableClassSerializer<T : Any>(val klass: KClass<T>) : Serializer<T>() 
         // good enough for a prototype.
         if (numFields != constructor.parameters.size)
             throw KryoException("Mismatch between number of constructor parameters and number of serialised fields " +
-                    "for ${klass.qualifiedName} ($numFields vs ${constructor.parameters.size})")
+                "for ${klass.qualifiedName} ($numFields vs ${constructor.parameters.size})")
         if (fieldTypeHash != hashParameters(constructor.parameters))
             throw KryoException("Hashcode mismatch for parameter types for ${klass.qualifiedName}: unsupported type evolution has happened.")
 

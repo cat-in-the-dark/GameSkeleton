@@ -30,7 +30,7 @@ object Control {
             types.add(Type.CONTROLLER)
             logger.info("Controller found: {}", controller?.name)
         }
-        Controllers.addListener(object: ControllerAdapter() {
+        Controllers.addListener(object : ControllerAdapter() {
             override fun connected(controller: Controller?) {
                 Control.controller = controller
                 types.add(Type.CONTROLLER)
@@ -89,12 +89,13 @@ object Control {
                 Button.RIGHT -> if (axis0 != null && axis0 > 0.5) pressedButtons.add(button)
                 Button.UP -> if (axis1 != null && axis1 < -0.5) pressedButtons.add(button)
                 Button.DOWN -> if (axis1 != null && axis1 > 0.5) pressedButtons.add(button)
-                else -> {}
+                else -> {
+                }
             }
         }
 
         for (button in buttons) {
-            val buttonCode = when(button) {
+            val buttonCode = when (button) {
                 Button.BUTTON0 -> 0
                 Button.BUTTON1 -> 1
                 Button.BUTTON2 -> 2

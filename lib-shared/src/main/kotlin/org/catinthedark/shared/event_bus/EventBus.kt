@@ -28,10 +28,10 @@ private object BusHolder {
     val lock: ReadWriteLock = ReentrantReadWriteLock()
 
     data class Info(
-            val klass: KClass<*>,
-            val annotation: Handler,
-            val method: Method,
-            val target: Any? = null
+        val klass: KClass<*>,
+        val annotation: Handler,
+        val method: Method,
+        val target: Any? = null
     ) : Comparable<Info> {
         override fun compareTo(other: Info): Int {
             return this.annotation.priority.compareTo(other.annotation.priority)
@@ -45,7 +45,7 @@ private object BusHolder {
  */
 object EventBus {
     private val log = LoggerFactory.getLogger(this::class.java)
-    private val defaultPreHandler: PreHandler = {_,msg,ctx -> Pair(msg, ctx) }
+    private val defaultPreHandler: PreHandler = { _, msg, ctx -> Pair(msg, ctx) }
 
     /**
      * Send the [message] to some receivers which are defined in the [BusHolder.addresses].
@@ -135,18 +135,18 @@ object BusRegister {
     fun register(packageName: String) {
         BusHolder.lock.writeLock().withLock {
             Reflections(packageName, MethodAnnotationsScanner())
-                    .getMethodsAnnotatedWith(Handler::class.java)
-                    .filter {
-                        Modifier.isStatic(it.modifiers)
+                .getMethodsAnnotatedWith(Handler::class.java)
+                .filter {
+                    Modifier.isStatic(it.modifiers)
+                }
+                .map { extractInfo(it, null) }
+                .filterNotNull()
+                .groupBy { it.klass }
+                .map { g ->
+                    g.value.sorted().forEach {
+                        register(it)
                     }
-                    .map { extractInfo(it, null) }
-                    .filterNotNull()
-                    .groupBy { it.klass }
-                    .map { g ->
-                        g.value.sorted().forEach {
-                            register(it)
-                        }
-                    }
+                }
         }
     }
 
@@ -156,9 +156,9 @@ object BusRegister {
     fun register(target: Any) {
         BusHolder.lock.writeLock().withLock {
             getAllMethods(
-                    target::class.java,
-                    withModifier(Modifier.PUBLIC),
-                    withAnnotation(Handler::class.java)
+                target::class.java,
+                withModifier(Modifier.PUBLIC),
+                withAnnotation(Handler::class.java)
             ).map {
                 extractInfo(it, target)
             }.filterNotNull().forEach {

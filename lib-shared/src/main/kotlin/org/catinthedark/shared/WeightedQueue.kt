@@ -48,15 +48,15 @@ package org.catinthedark.shared
  * то тяжелые старые объекты вывалятся из нее при следующем вытягиваниии не зависимо от кванта времени.
  */
 class WeightedQueue<T>(
-        private val overweight: Long = 100L
+    private val overweight: Long = 100L
 ) {
     private val collection: MutableList<Weighted<T>> = arrayListOf()
 
     fun add(element: T, weight: Long) {
         collection.add(Weighted(
-                weight = weight,
-                actualWeight = 0L,
-                payload = element))
+            weight = weight,
+            actualWeight = 0L,
+            payload = element))
     }
 
     fun pollOverweight(): List<Weighted<T>> {
@@ -108,9 +108,9 @@ class WeightedQueue<T>(
     }
 
     data class Weighted<out T>(
-            val weight: Long, // in ms
-            var actualWeight: Long, // in ms
-            val payload: T
+        val weight: Long, // in ms
+        var actualWeight: Long, // in ms
+        val payload: T
     ) {
         fun delta() = weight - actualWeight
         fun percentage(): Float {
@@ -118,7 +118,7 @@ class WeightedQueue<T>(
             val p = actualWeight.toFloat() / weight.toFloat()
             return if (p >= 1) {
                 1f
-            } else if (p <=0) {
+            } else if (p <= 0) {
                 0f
             } else {
                 p

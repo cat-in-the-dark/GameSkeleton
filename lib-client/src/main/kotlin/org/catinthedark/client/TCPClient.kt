@@ -14,8 +14,8 @@ import org.catinthedark.shared.serialization.NettyEncoder
 import org.slf4j.LoggerFactory
 
 class TCPClient(
-        private val kryo: Kryo,
-        private val invoker: Invoker
+    private val kryo: Kryo,
+    private val invoker: Invoker
 ) {
     private val group = NioEventLoopGroup()
     private val bootstrap = Bootstrap()
@@ -25,17 +25,17 @@ class TCPClient(
     init {
         BusRegister.register(this)
         bootstrap.group(group)
-                .channel(NioSocketChannel::class.java)
-                .handler(object : ChannelInitializer<AbstractChannel>() {
-                    override fun initChannel(ch: AbstractChannel) {
-                        val pipe = ch.pipeline()
+            .channel(NioSocketChannel::class.java)
+            .handler(object : ChannelInitializer<AbstractChannel>() {
+                override fun initChannel(ch: AbstractChannel) {
+                    val pipe = ch.pipeline()
 
-                        pipe.addLast("decoder", NettyDecoder(kryo))
-                        pipe.addLast("encoder", NettyEncoder(kryo))
-                        pipe.addLast("handler", MessageHandler(invoker))
-                    }
-                })
-                .option(ChannelOption.SO_KEEPALIVE, true)
+                    pipe.addLast("decoder", NettyDecoder(kryo))
+                    pipe.addLast("encoder", NettyEncoder(kryo))
+                    pipe.addLast("handler", MessageHandler(invoker))
+                }
+            })
+            .option(ChannelOption.SO_KEEPALIVE, true)
     }
 
     fun connect(host: String, port: Int) {

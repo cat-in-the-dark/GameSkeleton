@@ -6,7 +6,7 @@ import org.catinthedark.shared.event_bus.EventBus
 import org.catinthedark.shared.invokers.Invoker
 
 class MessageHandler(
-        private val invoker: Invoker
+    private val invoker: Invoker
 ) : SimpleChannelInboundHandler<Any>() {
     override fun channelRead0(ctx: ChannelHandlerContext?, msg: Any?) {
         if (msg == null) return

@@ -5,7 +5,6 @@ mainClassName = 'org.catinthedark.example.server.Main'
 
 dependencies {
     compile 'org.slf4j:slf4j-simple:1.7.21'
-    compile project(':lib-server')
     compile project(':lib-shared')
     compile project(':example-shared')
 

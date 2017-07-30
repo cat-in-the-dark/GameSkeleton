@@ -1,7 +1,8 @@
 package org.catinthedark.example.shared.messages
 
-import java.io.Serializable
+import org.catinthedark.shared.serialization.Message
 
+@Message
 data class OnGameStart(
-        val data: String
-): Serializable
+    val data: String
+)

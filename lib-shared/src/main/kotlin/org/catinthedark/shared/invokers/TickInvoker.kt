@@ -27,13 +27,9 @@ class TickInvoker : DeferrableInvoker {
      * This call invokes all queued funcs that must be run at this time.
      */
     fun run(delta: Long) {
-        time += delta
-
         lock.writeLock().withLock {
+            time += delta
             processDefer()
-        }
-        // break big lock into two small, like unlock eventloop
-        lock.writeLock().withLock {
             processPeriodic()
         }
     }

@@ -9,14 +9,13 @@ import org.catinthedark.shared.event_bus.BusRegister
 import org.catinthedark.shared.event_bus.EventBus
 import org.catinthedark.shared.event_bus.Handler
 import org.catinthedark.shared.invokers.Invoker
-import org.catinthedark.shared.invokers.SimpleInvoker
 import org.catinthedark.shared.serialization.NettyDecoder
 import org.catinthedark.shared.serialization.NettyEncoder
 import org.slf4j.LoggerFactory
 
 class TCPClient(
         private val kryo: Kryo,
-        private val invoker: Invoker = SimpleInvoker()
+        private val invoker: Invoker
 ) {
     private val group = NioEventLoopGroup()
     private val bootstrap = Bootstrap()
@@ -33,7 +32,7 @@ class TCPClient(
 
                         pipe.addLast("decoder", NettyDecoder(kryo))
                         pipe.addLast("encoder", NettyEncoder(kryo))
-                        pipe.addLast("handler", MessageHandler())
+                        pipe.addLast("handler", MessageHandler(invoker))
                     }
                 })
                 .option(ChannelOption.SO_KEEPALIVE, true)

@@ -14,6 +14,13 @@ allprojects {
         jcenter()
     }
 
+    ext {
+        gdxVersion = '1.9.6'
+        nettyVersion = '4.1.6.Final'
+        slf4jVersion = '1.7.21'
+        junitVersion = '4.12'
+    }
+
     apply plugin: 'java'
     apply plugin: 'kotlin'
 
